@@ -1,0 +1,529 @@
+{
+    "monitorDutyMan": {
+    	"num":"1",
+        "jobId": "monitorMan",
+        "url"  :"/monitor/man",
+        "type" : "text",
+        "refreshRate" : "1000*60*60*12",
+        "notes":"监控值班/代班人"
+    },
+    
+    "complaintDutyMan": {
+    	"num":"2",
+        "jobId": "complaintMan",
+        "url"  :"/complaint/man",
+        "type" : "text",
+        "refreshRate" : "1000*60*60*12",
+        "notes":"投诉值班/代班人"
+    },
+    
+    "systemTime": {
+    	"num":"3",
+        "jobId": "systemTime",
+        "url"  :"/system/time",
+        "type" : "text",
+        "refreshRate" : "1000",
+        "notes":"数据库的系统时间"
+    },
+    
+    "account": {
+    	"num":"4",
+        "jobId": "account",
+        "url"  :"/account",
+        "type" : "list",
+        "refreshRate" : "1000*60*60",
+        "linkUrl" : "http://132.32.22.9/JLWZLogon/Login.aspx",
+        "notes":"三期对账"
+    },
+    
+    "collectionPoint": {
+    	"num":"5",
+        "jobId": "collectionPoint",
+        "url"  :"/collection/point",
+        "type" : "list",
+        "refreshRate" : "1000*60*10",
+        "tableTitle":[{"field":"point","title":"位置"},{"field":"text","title":"异常现象"},{"field":"creat_time","title":"产生时间"},{"field":"ip","title":"告警IP"}],
+        "notes":"采集点"
+    },
+    
+    "highOrderSheet": {
+    	"num":"6",
+        "jobId": "highOrderSheet",
+        "url"  :"/high/order/sheet",
+        "type" : "bar",
+        "refreshRate" : "1000*60",
+        "axis":["一般","严重","重大","特大","待审阅","超时数"],
+        "linkUrl":{"url":"http://132.32.19.85/fms/modules/portlets/login.jsp","target":"_blank"},
+        "notes":"高额工单"
+    },
+    
+    "groupOrderChar": {
+    	"num":"7",
+        "jobId": "groupOrderChar",
+        "url"  :"/group/order/char",
+        "type" : "bar_90",
+        "linkUrl":null,
+        "axis":["2小时内超时","4小时内超时","6小时内超时","大于6小时","本月共超时","本月共生成"],
+        "refreshRate" : "1000*60*20",
+        "notes":"集团事件char图"
+    },
+    
+    "groupOrderTable": {
+    	"num":"8",
+        "jobId": "groupOrderTable",
+        "url"  :"/group/order/table",
+        "type" : "list",
+        "refreshRate" : "1000*60*20",
+        "linkUrl":null,
+        "notes":"集团事件table图"
+    },
+    
+    "elecDeclaration": {
+    	"num":"9",
+        "jobId": "elecDeclaration",
+        "url"  :"/elec/declaration",
+        "type" : "bar",
+        "axis":["网站待处理","即将超时","BOMC待派发"],
+        "refreshRate" : "1000*60*30",
+        "linkUrl":null,
+        "notes":"电子申告"
+    },
+    
+    "noticeSurvey": {
+    	"num":"10",
+        "jobId": "noticeSurvey",
+        "url"  :"/notice/survey",
+        "type" : "bar",
+        "refreshRate" : "1000*60*30",
+        "linkUrl":null,
+        "axis":["交流网站生成","bomc流程生成"],
+        "notes":"通知调查"
+    },
+    
+     "dutyAlarm": {
+     	"num":"11",
+        "jobId": "dutyAlarm",
+        "url"  :"/duty/alarm",
+        "type" : "list",
+        "refreshRate" : "1000*60",
+        "linkUrl":{"url":"http://www.baidu.com","param":"alarmId"},
+        "tableTitle":[{"field":"num","title":"序号"},{"field":"alarm_title","title":"告警标题"},{"field":"alarm_text","title":"告警正文"},{"field":"active_status","title":"状态"},{"field":"event_time","title":"告警时间"},{"field":"alarm_ne_ip","title":"告警ip"}],
+        "notes":"值班关注告警"
+    },
+    
+     "commonAlarm": {
+     	"num":"12",
+     	"type" : "list",
+        "jobId": "commonAlarm",
+        "url"  :"/common/alarm",
+        "refreshRate" : "1000*60",
+        "linkUrl":{"url":"http://www.baidu.com","param":"alarmId"},
+        "tableTitle":[{"field":"num","title":"序号"},{"field":"alarm_title","title":"告警标题"},{"field":"alarm_text","title":"告警正文"},{"field":"active_status","title":"状态"},{"field":"event_time","title":"告警时间"},{"field":"alarm_ne_ip","title":"告警ip"},{"field":"send_status","title":"拨打状态"}],
+        "notes":"普通告警"
+    },
+    
+    "soundAlarmCount": {
+    	"num":"13",
+        "jobId": "soundAlarmCount",
+        "url"  :"/sound/alarm/count",
+        "type" : "pie",
+        "refreshRate" : "1000*60",
+        "linkUrl":{"url":"/platform/detail","target":null,"sub_0":"soundAlarmDb","sub_1":"soundAlarmGroup","sub_2":"soundAlarmPoint","sub_3":"soundAlarmOther"},
+        "notes":"近24小时语音告警统计"
+    },
+    
+     "soundAlarmDb": {
+     	"num":"14",
+        "jobId": "soundAlarmDb",
+        "url"  :"/sound/alarm/db",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "tableTitle":[{"field":"num","title":"序号"},{"field":"alarm_title","title":"告警标题"},{"field":"alarm_text","title":"告警正文"},{"field":"active_status","title":"状态"},{"field":"event_time","title":"告警时间"},{"field":"alarm_ne_ip","title":"告警ip"},{"field":"send_status","title":"拨打状态"}],
+        "notes":"近24小时语音告警_数据库列表"
+    },
+    
+    "soundAlarmGroup": {
+    	"num":"15",
+        "jobId": "soundAlarmGroup",
+        "url"  :"/sound/alarm/group",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时语音告警_集团单列表"
+    },
+    
+    "soundAlarmPoint": {
+    	"num":"16",
+        "jobId": "soundAlarmPoint",
+        "url"  :"/sound/alarm/point",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时语音告警_采集点列表"
+    },
+    
+    "soundAlarmOther": {
+    	"num":"17",
+        "jobId": "soundAlarmOther",
+        "url"  :"/sound/alarm/other",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时语音告警_其他列表"
+    },
+    
+   "callFailCount": {
+   		"num":"18",
+        "jobId": "callFailCount",
+        "url"  :"/call/fail/count",
+        "type" : "bar_90",
+        "refreshRate" : "1000*60",
+        "linkUrl":{"url":"/platform/detail","target":null,"sub_0":"callFailFirst","sub_1":"callFailSec","sub_2":"callFailThree","sub_3":"callFailFour","sub_4":"callFaiFifth"},
+        "notes":"近24小时拨打失败统计"
+    },
+    
+    "callFailFirst": {
+    	"num":"19",
+        "jobId": "callFailFirst",
+        "url"  :"/call/fail/first",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "tableTitle":[{"field":"num","title":"序号"},{"field":"alarm_title","title":"告警标题"},{"field":"alarm_text","title":"告警正文"},{"field":"active_status","title":"状态"},{"field":"event_time","title":"告警时间"},{"field":"alarm_ne_ip","title":"告警ip"},{"field":"send_status","title":"拨打状态"}],
+        "notes":"近24小时拨打失败_第1名列表"
+    },
+    
+    "callFailSec": {
+    	"num":"20",
+        "jobId": "callFailSec",
+        "url"  :"/call/fail/sec",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时拨打失败_第2名列表"
+    },
+    
+    "callFailThree": {
+    	"num":"21",
+        "jobId": "callFailThree",
+        "url"  :"/call/fail/three",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时拨打失败_第3名列表"
+    },
+    
+    "callFailFour": {
+    	"num":"22",
+        "jobId": "callFailFour",
+        "url"  :"/call/fail/four",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时拨打失败_第4名列表"
+    },
+    
+     "callFailFifth": {
+     	"num":"23",
+        "jobId": "callFailFifth",
+        "url"  :"/call/fail/fifth",
+        "type" : "list",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"近24小时拨打失败_第5名列表"
+    },
+    
+    "dbInspection": {
+    	"num":"24",
+        "jobId": "dbInspection",
+        "url"  :"/db/inspection",
+        "refreshRate" : "1000*60*60",
+        "linkUrl":null,
+        "notes":"数据库巡检信息"
+    },
+    
+    "notice": {
+    	"num":"25",
+        "jobId": "notice",
+        "url"  :"/notice",
+        "type" : "list",
+        "tableTitle":[{"field":"num","title":"序号"},{"field":"title","title":"标题"},{"field":"create_time","title":"时间"}],
+        "refreshRate" : null,
+        "linkUrl":{"url":"http://www.baidu.com?id=1","param":"sqlId"},
+        "notes":"通知公告"
+    },
+    
+  
+    
+    "partakeWorksheet_0": {
+    	"num":"27",
+        "jobId": "partakeWorksheet_d",
+        "url"  :"/partake/worksheet",
+        "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_参与工单量"
+    },
+    
+    "cOneSolveRate_0": {
+    	"num":"28",
+        "jobId": "cOneSolveRate_d",
+        "url"  :"/c/one/solve/rate",
+        "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_中心一次性解决率/处理时长"
+    },
+    
+    "oneSolveRate_0": {
+    	"num":"29",
+        "jobId": "oneSolveRate_d",
+        "url"  :"/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次性解决率"
+    },
+    
+    "deptOneSolveRate_0": {
+    	"num":"30",
+        "jobId": "deptOneSolveRate_d",
+        "url"  :"/dept/one/solve/rate",
+         "type" : "line",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室一次性解决率"
+    },
+    
+    "oneSolveCount_0": {
+    	"num":"31",
+        "jobId": "oneSolveCount_d",
+        "url"  :"/one/solve/count",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次解决工单量"
+    },
+    
+    "selfOneSolveRate_0": {
+    	"num":"32",
+        "jobId": "selfOneSolveRate_d",
+        "url"  :"/self/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次自解决率"
+    },
+    
+    "deptDealLong_0": {
+    	"num":"33",
+        "jobId": "deptDealLong_d",
+        "url"  :"/dept/deal/long",
+         "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室平均处理时长"
+    },
+    
+    "dealLong_0": {
+    	"num":"34",
+        "jobId": "dealLong_d",
+        "url"  :"/deal/long",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_处理时长"
+    },
+    
+    "turnSendRate_0": {
+    	"num":"35",
+        "jobId": "turnSendRate_d",
+        "url"  :"/turn/send/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_转派率"
+    },
+    
+    "partakeWorksheet_1": {
+    	"num":"27",
+        "jobId": "partakeWorksheet_w",
+        "url"  :"/partake/worksheet",
+        "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_参与工单量"
+    },
+    
+     "cOneSolveRate_1": {
+    	"num":"28",
+        "jobId": "cOneSolveRate_w",
+        "url"  :"/c/one/solve/rate",
+        "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_中心一次性解决率/处理时长"
+    },
+    
+    "oneSolveRate_1": {
+    	"num":"29",
+        "jobId": "oneSolveRate_w",
+        "url"  :"/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次性解决率"
+    },
+    
+    "deptOneSolveRate_1": {
+    	"num":"30",
+        "jobId": "deptOneSolveRate_w",
+        "url"  :"/dept/one/solve/rate",
+         "type" : "line",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室一次性解决率"
+    },
+    
+    "oneSolveCount_1": {
+    	"num":"31",
+        "jobId": "oneSolveCount_w",
+        "url"  :"/one/solve/count",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次解决工单量"
+    },
+    
+    "selfOneSolveRate_1": {
+    	"num":"32",
+        "jobId": "selfOneSolveRate_w",
+        "url"  :"/self/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次自解决率"
+    },
+    
+    "deptDealLong_1": {
+    	"num":"33",
+        "jobId": "deptDealLong_w",
+        "url"  :"/dept/deal/long",
+         "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室平均处理时长"
+    },
+    
+    "dealLong_1": {
+    	"num":"34",
+        "jobId": "dealLong_w",
+        "url"  :"/deal/long",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_处理时长"
+    },
+    
+    "turnSendRate_1": {
+    	"num":"35",
+        "jobId": "turnSendRate_w",
+        "url"  :"/turn/send/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_转派率"
+    },
+    
+    "partakeWorksheet_2": {
+    	"num":"27",
+        "jobId": "partakeWorksheet_m",
+        "url"  :"/partake/worksheet",
+        "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_参与工单量"
+    },
+    
+    "cOneSolveRate_2": {
+    	"num":"28",
+        "jobId": "cOneSolveRate_m",
+        "url"  :"/c/one/solve/rate",
+        "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_中心一次性解决率/处理时长"
+    },
+    
+    "oneSolveRate_2": {
+    	"num":"29",
+        "jobId": "oneSolveRate_m",
+        "url"  :"/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次性解决率"
+    },
+    
+    "deptOneSolveRate_2": {
+    	"num":"30",
+        "jobId": "deptOneSolveRate_m",
+        "url"  :"/dept/one/solve/rate",
+         "type" : "line",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室一次性解决率"
+    },
+    
+    "oneSolveCount_2": {
+    	"num":"31",
+        "jobId": "oneSolveCount_m",
+        "url"  :"/one/solve/count",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次解决工单量"
+    },
+    
+    "selfOneSolveRate_2": {
+    	"num":"32",
+        "jobId": "selfOneSolveRate_m",
+        "url"  :"/self/one/solve/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_一次自解决率"
+    },
+    
+    "deptDealLong_2": {
+    	"num":"33",
+        "jobId": "deptDealLong_m",
+        "url"  :"/dept/deal/long",
+         "type" : "bar",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_各科室平均处理时长"
+    },
+    
+    "dealLong_2": {
+    	"num":"34",
+        "jobId": "dealLong_m",
+        "url"  :"/deal/long",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_处理时长"
+    },
+    
+    "turnSendRate_2": {
+    	"num":"35",
+        "jobId": "turnSendRate_m",
+        "url"  :"/turn/send/rate",
+         "type" : "line_mul",
+        "refreshRate" : null,
+        "linkUrl":null,
+        "notes":"帮助台_转派率"
+    }
+  
+}

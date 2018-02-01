@@ -1,0 +1,104 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <title>文件属性修改</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/zlight.menu.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/main_style.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/font-awesome.min.css}" media="screen" />
+</head>
+<body>
+<form  id="data_form"  class="form-horizontal" >
+    <div class="form-group" >
+        <label for="fileName" class="col-xs-2 control-label">文件名:</label>
+        <div class="col-xs-10">
+            <input type="text" class="form-control" name="fileName"  id="fileName"   th:value="${data.fileName}"/>
+        </div>
+    </div>
+    <div th:if="${data.isFolder != 1} ">
+        <div class="form-group" >
+            <label for="busiNo" class="col-xs-2 control-label">局数据号:</label>
+            <div  class="col-xs-10">
+                <input type="text" class="form-control" name="busiNo"  id="busiNo"   th:value="${data.busiNo}"/>
+            </div>
+        </div>
+        <div class="form-group" >
+            <label for="fileNo" class="col-xs-2 control-label">文号:</label>
+            <div class="col-xs-10">
+                <input type="text" class="form-control" name="fileNo"  id="fileNo"  th:value="${data.fileNo}"/>
+            </div>
+        </div>
+        <div class="form-group" >
+            <label for="issueTime" class="col-xs-2 control-label">下发时间:</label>
+            <div class="col-xs-10">
+                <input type="text" class="form-control" name="issueTime"  id="issueTime"   th:value="${data.issueTime}" onFocus="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
+            </div>
+        </div>
+    </div>
+    <div class="form-group">
+        <div class="col-xs-offset-4 col-xs-10">
+            <button  type="button" class="btn btn-default " id="save_data">保存</button>
+            <button  type="button" class="col-xs-offset-2 btn btn-default " id="btn_cancle">取消</button>
+        </div>
+    </div>
+
+    <div>
+        <input type="hidden" th:if="${data.id != null}" th:value="${data.id}" name="id" id="data_id"/>
+        <input type="hidden" th:if="${data.fileName != null}" th:value="${data.fileName}" name="oldFileName" id="old_file_name"/>
+        <input  type="hidden"  name="filePath" id="file_path" value=""/>
+    </div>
+</form>
+
+</body>
+<script th:src="@{/js/html5shiv.min.js}"></script>
+<script th:src="@{/js/date_util.js}"></script>
+<script th:src="@{/js/table_util.js}"></script>
+<script th:src="@{/js/jquery-1.11.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.zlight.menu.1.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.serializejson.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/My97DatePicker/WdatePicker.js}"></script>
+<script type="text/javascript" th:src="@{/js/layer/layer.js}"></script>
+<script>
+    //<![CDATA[
+    $(document).ready(function(){
+        var index = parent.layer.getFrameIndex(window.name);
+        $("#save_data").click(function () {
+            console.log('修改文件信息');
+            var data=$('#data_form').serializeJSON();
+            //序列化获得表单数据，结果为：user_id=12&user_name=John&user_age=20
+            //var submitData=decodeURIComponent(data,true);
+            //submitData是解码后的表单数据，结果同上
+            $.ajax({
+                url:'/data/'+data.id+'/list',
+                type : "post",
+                dataType : "json",
+                cache:false,//false是不缓存，true为缓存
+                async:true,//true为异步，false为同步
+                data:data,
+                success:function(result){
+                    console.log('result===========');
+                    console.log(result);
+                    //layer.msg("修改成功",{icon:1});
+                    if(result.success){
+                        parent.$("#handle_status").val(JSON.stringify(result));
+                        parent.layer.close(index);
+                   }else {
+                       layer.msg("修改失败",{icon:2});
+                   }
+                },
+                error:function(){
+                    //请求失败时
+                    layer.msg('请求失败时，请检查网络连接',{icon:2});
+                }
+            });
+        });
+
+        $("#btn_cancle").on('click',function () {
+            parent.layer.close(index);
+        })
+    });
+    //]]>
+</script>
+</html>

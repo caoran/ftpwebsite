@@ -1,0 +1,34 @@
+1:callFailCount 近24小时拨打失败，type配置错误
+2:唉,我都是老司机了，解决这种问题居然还花了我这么长时间，真是郁闷。
+	即ul li点击没有反应。没有加载onclick事件。
+	可是自己写的click事件没有问题啊，不仅如此，小手模式也不加载。
+	
+	最后才意识到可能是echars图挡住了。一看果然选中echar图的时候连上面的ul都选中了。
+	
+	问题出在了ul 的 float上，下面的元素没有及时的清楚。
+	
+	
+	
+	
+美工支持：
+	柱形图颜色；
+	集团事件表格：
+	三期对账是不是需要做两个图（换背景）
+	
+	
+	
+	
+	三期对账
+	指标数据
+	公告弹出
+	统计弹出
+	zhi
+	
+	
+	测试过程：
+	告警，饼图,条形图，柱状图
+	
+	1：无法一启动即加载数据
+	2：redis中sql格式要求比较严格。
+	"tableTitle":[{"field":"num","title":"序号"},{"field":"ALARM_TITLE","title":"告警标题"},{"field":"ALARM_TEXT","title":"告警正文"},{"field":"ACTIVE_STATUS","title":"状态"},{"field":"EVENT_TIME","title":"告警时间"},{"field":"ALARM_NE_IP","title":"告警ip"},{"field":"SEND_STATUS","title":"拨打状态"}],
+//"tableTitle":[{"field":"num","title":"序号"},{"field":"title","title":"标题"},{"field":"event_time","title":"时间"}],

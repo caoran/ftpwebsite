@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <title>移动位置选择</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/zlight.menu.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/main_style.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/font-awesome.min.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/zTreeStyle/zTreeStyle.css}" media="screen"/>
+</head>
+<body>
+<form  id="move_form"  class="form-horizontal move-form" >
+    <!--<h4>移动到</h4>-->
+    <div id="move-tree" class="ztree move-tree">
+    </div>
+    <div class="form-group">
+        <div class="col-xs-offset-2 col-xs-10">
+            <button  type="button" class="btn btn-default " id="creat_folder">新建文件夹</button>
+            <button  type="button" class="btn btn-default " id="save_data">确定</button>
+            <button  type="button" class="col-xs-offset-2 btn btn-default " id="btn_cancle">取消</button>
+        </div>
+    </div>
+    <div>
+        <input type="hidden"  name="id" id="data_id"/>
+    </div>
+</form>
+
+</body>
+<script th:src="@{/js/html5shiv.min.js}"></script>
+<script th:src="@{/js/jquery-1.11.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.serializejson.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.core.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.excheck.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.exedit.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.exhide.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/layer/layer.js}"></script>
+<script>
+    //<![CDATA[
+
+    var setting = {
+        check : {
+            enable : false
+        },view: {
+            selectedMulti: false,
+            dblClickExpand: false
+        },
+        edit: {
+            enable: true,
+            showRemoveBtn: false,
+            showRenameBtn: false
+        },
+        /* async: {
+             enable: false,//采用异步加载
+             url : "/data/tree",
+             dataType : "json",
+             type : "get"
+         },*/
+        callback : {
+            beforeRename: zTreeBeforeRename,
+            onRename:zTreeOnRename
+        }
+    };
+
+    function zTreeBeforeRename(treeId, treeNode, newName) {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        console.log('修改文件名称，原文件名：'+treeNode.name+",新文件名称："+newName);
+        if (newName.length == 0) {
+            layer.alert("节点名称不能为空.");
+            setTimeout(function(){zTree.editName(treeNode)}, 10);
+            return false;
+        }
+        var parentNode=treeNode.getParentNode();
+
+
+        if(treeNode.name===newName){
+            console.log('文件名称没有改变：'+newName);
+            return true;
+        }
+        var newCreateName=containFileName(newName,0,parentNode);
+        if(newCreateName!==newName){
+            layer.alert("该节点父目录下存在名称为："+newName+"的节点，可修改节点名称为："+newCreateName);
+            return false;
+        }
+        treeNode.name=newName;
+        zTree.updateNode(treeNode);
+        $.ajax({
+            type : "put",
+            dataType : "json",
+            url: "/data/tree",
+            data:{
+                'id':treeNode.id,
+                'fileName':newName,
+                'oldFileName':treeNode.name,
+                'filePath':treeNode.nodePath
+            },
+            success: function (data) {
+                console.log(data);
+                return true;
+            },
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                    + "-textStatus:" + textStatus);
+            }
+        });
+        return true;
+    }
+
+    function containFileName(fileName,suffix,parentNode) {
+        console.log('判断目录下是否存在相同的'+fileName+suffix);
+        var resultName=suffix==0?fileName:fileName+suffix;
+        $.each(parentNode.children,function (index,obj) {
+            if(resultName===obj.name){
+                suffix++;
+                console.log(suffix);
+                resultName=containFileName(fileName,suffix,parentNode);
+                return false;
+            }
+        });
+        console.log('返回的结果名称为：'+resultName);
+        return resultName;
+    }
+
+    function zTreeOnRename(event, treeId, treeNode, isCancel) {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        zTree.setting.callback.onClick(null,zTree.setting.treeId, treeNode);
+    }
+
+    function initTree(){
+        $.ajax({
+            type : "get",
+            dataType : "json",
+            url: "/data/tree",
+            data:{
+                isDelete:0
+            },
+            success: function (data) {
+                console.log(data);
+                $.fn.zTree.init($("#move-tree"), setting, data);
+                var zTree = $.fn.zTree.getZTreeObj("move-tree");
+                var rootNode=zTree.getNodes();
+                console.log("rootNode=================")
+                console.log(rootNode)
+                zTree.selectNode(rootNode[0]);
+                zTree.expandNode(rootNode[0]);
+                //zTree.setting.callback.onClick(null,zTree.setting.treeId, rootNode[0]);
+            },
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                    + "-textStatus:" + textStatus);
+            }
+        });
+    };
+
+    function hasChildren(tempNode,parentNode) {
+        console.log('parentNode',parentNode.id)
+        console.log('parentNode.id===0',parentNode.id==='0');
+        if(parentNode.id==='0'){
+            return true;
+        }
+
+        if(parentNode.id===tempNode.id){
+            layer.msg('移动文件'+tempNode.name+'存在递归关系，不允许将父目录移动到其子目录下', {icon: 2});
+            return false;
+        }
+        return hasChildren(tempNode,parentNode.getParentNode());
+    }
+
+    var changeParent=function (event) {
+        console.log('index==');
+        console.log(event.data.index);
+        var zTree=$.fn.zTree.getZTreeObj("move-tree");
+        var selectNodes=zTree.getSelectedNodes();
+        console.log(selectNodes);
+        if(selectNodes.length==0){
+            layer.alert("请选择要移动文件的位置");
+        }else {
+            var parentNode = selectNodes[0].isParent ? selectNodes[0] : selectNodes[0].getParentNode();
+            console.log('移动文件到：。。。', parentNode.nodePath);
+            var data = $('#move_form').serializeJSON();
+            console.log('form页面序列化：',data);
+            var ids = data.id;
+            var hasRecursion = false;
+            $.each(data.id.split(','), function (index, obj) {
+                var tempNode = zTree.getNodeByParam('id', obj, null);
+
+                if(tempNode.getParentNode().id===parentNode.id){
+                    layer.msg('文件'+tempNode.name+'本身就在'+parentNode.name+'目录下，无需移动', {icon: 7});
+                    hasRecursion = true
+                    return false;
+                }
+
+                if (tempNode.isParent) {
+                    if(tempNode.id===parentNode.id){
+                        layer.msg('文件夹'+tempNode.name+'无需移动到自身', {icon: 7});
+                        hasRecursion = true
+                        return false;
+                    }
+                    var flag=hasChildren(tempNode, parentNode);
+                    console.log('flag',flag);
+                    if (!flag) {
+                        hasRecursion = true
+                        return false;
+                    }
+                }
+
+            });
+            console.log('hasRecursion',hasRecursion);
+            if (!hasRecursion) {
+                $.ajax({
+                    url: '/data/' + parentNode.id + '/list',
+                    type: "post",
+                    dataType: "json",
+                    cache: false,//false是不缓存，true为缓存
+                    async: true,//true为异步，false为同步
+                    data: data,
+                    success: function (result) {
+                        console.log('result===========');
+                        console.log(result);
+                        if (result.success) {
+                            parent.$("#handle_status").val(JSON.stringify(result));
+                            parent.layer.close(event.data.index);
+                        } else {
+                            layer.msg("移动失败", {icon: 2});
+                        }
+                    },
+                    error: function () {
+                        //请求失败时
+                        layer.msg('请求失败时，请检查网络连接', {icon: 2});
+                    }
+                });
+            }
+        }
+    }
+
+    var createNewFolder=function () {
+        console.log('新增文件夹');
+        var zTree=$.fn.zTree.getZTreeObj("move-tree");
+        var selectNodes=zTree.getSelectedNodes();
+        console.log(selectNodes);
+        if(selectNodes.length==0){
+            layer.alert("请选择要新建文件夹的根节点");
+        }else{
+            var fileName="新建文件夹";
+            fileName=containFileName(fileName,0,selectNodes[0]);
+            $.ajax({
+                type : "post",
+                dataType : "json",
+                url: "/data/tree",
+                data:{
+                    parentId:selectNodes[0].id,
+                    isParent:true,
+                    fileName:fileName,
+                    filePath:selectNodes[0].nodePath+"\\"+fileName
+                },
+                success: function (data) {
+                    console.log(data);
+                    var newNode={id:data.id,name:data.fileName,parentId:data.parentId,isParent:true,nodePath:selectNodes[0].nodePath+"\\"+data.fileName};
+                    newNode=zTree.addNodes(selectNodes[0],newNode,false);
+                    console.log(newNode);
+                    zTree.editName(newNode[0]);
+                    console.log(newNode);
+                },
+                error : function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                        + "-textStatus:" + textStatus);
+                }
+            });
+        }
+    }
+
+
+    $(document).ready(function(){
+        var index = parent.layer.getFrameIndex(window.name);
+
+        initTree();
+
+        $("#save_data").on('click',{'index':index},changeParent);
+
+        $("#creat_folder").on('click',createNewFolder);
+
+        $("#btn_cancle").on('click',function () {
+            parent.layer.close(index);
+        })
+    });
+    //]]>
+</script>
+</html>

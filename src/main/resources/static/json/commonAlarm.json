@@ -1,0 +1,3 @@
+[{"alarmId":"alarmId1","num":"1","alarm_title":"告警标题11111","alarm_text":"工单号为EV17939009的协查单s在一个半小时内没有上报集团","active_status":"清楚","send_status":"1","event_time":"2017-11-19 19:00:00","alarm_ne_ip":"127.0.127.123"},
+{"alarmId":"alarmId2","num":"1","alarm_title":"告警标题11111","alarm_text":"工单号为EV17939009的协查单s在一个半小时内没有上报集团","active_status":"清楚","send_status":"2","event_time":"2017-11-19 19:00:00","alarm_ne_ip":"127.0.127.123"}
+]

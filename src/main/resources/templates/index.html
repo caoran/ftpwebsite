@@ -1,0 +1,606 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=UTF-8"/>
+    <meta name="renderer" content="webkit"/>
+    <meta http-equiv="X-UA-Compatible" content="IE=edge"/>
+    <!--<link rel="shortcut icon" href="favicon.ico" type="image/x-icon" />-->
+    <title>文件共享云盘1</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" media="screen"/>
+    <link rel="stylesheet" th:href="@{/css/bootstrap-treeview.min.css}" media="screen"/>
+    <link rel="stylesheet" th:href="@{/css/bootstrap-table.css}" media="screen"/>
+    <link rel="stylesheet" th:href="@{/css/main_style.css}" media="screen"/>
+    <link rel="stylesheet" th:href="@{/css/font-awesome.min.css}" media="screen"/>
+    <link rel="stylesheet" th:href="@{/css/zTreeStyle/zTreeStyle.css}" media="screen"/>
+</head>
+<body>
+<div>
+    <input  type="hidden"  name="handle_status" id="handle_status"/>
+</div>
+<div style="height: 100%">
+    <div class="header">
+        <h3>文件共享云盘</h3>
+    </div>
+    <div class="content">
+            <div class="panel-left">
+                <div class="title">
+                    <h4>目录</h4>
+                    <button id="folder-create" class="btn-default btn-create-folder pull-right">新建文件夹</button>
+                </div>
+                <div id="tree" class="ztree"></div>
+            </div>
+            <div class="panel-right">
+                <div class="panel-header">
+                    <div class="panel-header-left">
+                        <div class=" title">
+                            <h4>文件列表</h4>
+                            <button class="btn-default pull-right" id="btn-recycle">文件回收站</button>
+                        </div>
+                        <div class="btn-group">
+                            <button id='btn-refresh' class="btn btn-default">刷新</button>
+                            <button class="btn btn-default">下载</button>
+                            <button class="btn btn-default">上传</button>
+                            <button id='btn-delete' class="btn btn-default">删除</button>
+                            <button id='btn-move' class="btn btn-default">移动到</button>
+                            <!--<button id='btn-rename' class="btn btn-default">重命名</button>-->
+                            <button id='btn-modify' class="btn btn-default">修改</button>
+                        </div>
+                    </div>
+                    <div class="panel-header-right">
+                        <form class="search-form"  id="search-form">
+                            <div class="">
+                                <label for="busiNo" class="w80">局数据号</label>
+                                <div class="w180">
+                                <input type="text" class="form-control" id="busiNo" name="busiNo"/>
+                                </div>
+                                <label for="fileNo" class="w40">文号</label>
+                                <div class="w180">
+                                <input type="text" class="form-control" id="fileNo" name="fileNo"/>
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <select class="w90">
+                                    <option value="1">下发时间</option>
+                                    <option value="2">修改时间</option>
+                                </select>
+                                <div class="w120">
+                                <input type="text" class="form-control" name="startTime" id="startTime" onFocus="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
+                                </div>
+
+                                <label>-</label>
+                                <div class="w110">
+                                <input type="text" class="form-control" name="endTime" id="endTime" onFocus="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
+                                </div>
+                                <label for="fileName" class="w60">文件名</label>
+                                <div class="w110">
+                                    <input type="text" class="form-control" name="fileName" id="fileName"/>
+                                </div>
+                                <button type="button" class="btn btn-default w80" id="btn-search">搜索</button>
+                            </div>
+                        </form>
+                    </div>
+                </div>
+                <div class="grid-table">
+                    <table   id="data_table_file"> <!--data-url='/data/list?parentId=0'  data-pagination="true" data-unique-id="id" data-page-size="2"  data-query-params-type=''
+                           width="100%" border="0" cellspacing="0" cellpadding="0" class="data_tab" data-side-pagination="server" data-page-list="[10, 25, 50]"-->
+                       <!-- <thead>
+                        <tr>
+                            <th data-checkbox="true"></th>
+                            <th  data-field="fileName" >文件名</th>
+                            <th  data-field="busiNo">局数据号</th>
+                            <th  data-field="fileNo">文号</th>
+                            <th  data-field="issueTime">下发时间</th>
+                            <th  data-field="fileSize">大小</th>
+                            <th  data-field="modifyTime">修改时间</th>
+                        </tr>
+                        </thead>-->
+                    </table>
+                </div>
+
+        </div>
+    </div>
+</div>
+</body>
+<script th:src="@{/js/html5shiv.min.js}"></script>
+<script th:src="@{/js/date_util.js}"></script>
+<script th:src="@{/js/table_util.js}"></script>
+<script th:src="@{/js/jquery-1.11.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table-zh-CN.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-treeview.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.zlight.menu.1.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.core.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.excheck.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.exedit.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.ztree.exhide.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.serializejson.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/My97DatePicker/WdatePicker.js}"></script>
+<script type="text/javascript" th:src="@{/js/layer/layer.js}"></script>
+
+<script>
+    //<![CDATA[
+    /*$(function () {
+        $.ajax({
+            type: "get",
+            url: "/data/tree.json",
+            dataType: "json",
+            success: function (result) {
+                console.log('111111');
+                console.log(result);
+                $('#tree').treeview({
+                    data: result,         // 数据源
+                    showCheckbox: false,   //是否显示复选框
+                    highlightSelected: true,    //是否高亮选中
+                    //nodeIcon: 'glyphicon glyphicon-user',
+                    emptyIcon: '',    //没有子节点的节点图标
+                    multiSelect: false,    //多选
+                    onNodeChecked: function (event,data) {
+                        alert(data.nodeId);
+                    },
+                    onNodeSelected: function (event, data) {
+                        alert(data.nodeId);
+                    }
+                });
+            },
+            error: function () {
+                alert("树形结构加载失败！")
+            }
+        });
+    })*/
+    var setting = {
+        check : {
+            enable : false
+        },view: {
+            selectedMulti: false,
+            dblClickExpand: false
+        },
+        edit: {
+            enable: true,
+            showRemoveBtn: false,
+            showRenameBtn: false
+        },
+       /* async: {
+            enable: false,//采用异步加载
+            url : "/data/tree",
+            dataType : "json",
+            type : "get"
+        },*/
+        callback : {
+            onClick : zTreeOnClick,
+            beforeRename: zTreeBeforeRename,
+            onRename:zTreeOnRename
+        }
+    };
+    
+    function zTreeBeforeRename(treeId, treeNode, newName) {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        console.log('修改文件名称，原文件名：'+treeNode.name+",新文件名称："+newName);
+        if (newName.length == 0) {
+            layer.alert("节点名称不能为空.");
+            setTimeout(function(){zTree.editName(treeNode)}, 10);
+            return false;
+        }
+        var parentNode=treeNode.getParentNode();
+
+
+        if(treeNode.name===newName){
+            console.log('文件名称没有改变：'+newName);
+            return true;
+        }
+        var newCreateName=containFileName(newName,0,parentNode);
+        if(newCreateName!==newName){
+            layer.alert("该节点父目录下存在名称为："+newName+"的节点，可修改节点名称为："+newCreateName);
+            return false;
+        }
+        treeNode.name=newName;
+        zTree.updateNode(treeNode);
+        $.ajax({
+            type : "put",
+            dataType : "json",
+            url: "/data/tree",
+            data:{
+                'id':treeNode.id,
+                'fileName':newName,
+                'oldFileName':treeNode.name,
+                'filePath':treeNode.nodePath
+            },
+            success: function (data) {
+                console.log(data);
+                return true;
+            },
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                    + "-textStatus:" + textStatus);
+            }
+        });
+        return true;
+    }
+
+    function containFileName(fileName,suffix,parentNode) {
+        console.log('判断目录下是否存在相同的'+fileName+suffix);
+        var resultName=suffix==0?fileName:fileName+suffix;
+        $.each(parentNode.children,function (index,obj) {
+            if(resultName===obj.name){
+                suffix++;
+                console.log(suffix);
+                resultName=containFileName(fileName,suffix,parentNode);
+                return false;
+            }
+        });
+        console.log('返回的结果名称为：'+resultName);
+        return resultName;
+    }
+    
+    function zTreeOnRename(event, treeId, treeNode, isCancel) {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        zTree.setting.callback.onClick(null,zTree.setting.treeId, treeNode);
+    }
+
+    function zTreeOnClick(event, treeId, treeNode) {
+        var $table = $('#data_table_file');
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        zTree.expandNode(treeNode);
+        $.ajax({
+            type : "get",
+            dataType : "json",
+            url: "/data/list",
+            data:{
+              'parentId':treeNode.isParent?treeNode.id:treeNode.parentId,
+                isDelete:0
+            },
+            success: function (data) {
+                $table.bootstrapTable('load', data);
+            },
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                    + "-textStatus:" + textStatus);
+            }
+        });
+    }
+
+    function initTree(){
+        $.ajax({
+            type : "get",
+            dataType : "json",
+            url: "/data/tree",
+            data:{
+                isDelete:0
+            },
+            success: function (data) {
+                console.log(data);
+                $.fn.zTree.init($("#tree"), setting, data);
+                var zTree = $.fn.zTree.getZTreeObj("tree");
+                var rootNode=zTree.getNodes();
+                console.log("rootNode=================")
+                console.log(rootNode)
+                zTree.selectNode(rootNode[0]);
+                zTree.expandNode(rootNode[0]);
+                //zTree.setting.callback.onClick(null,zTree.setting.treeId, rootNode[0]);
+            },
+            error : function(XMLHttpRequest, textStatus, errorThrown) {
+                console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                    + "-textStatus:" + textStatus);
+            }
+        });
+    };
+    function initList(){
+        console.log("开始加载列表数据");
+        $('#data_table_file').bootstrapTable({
+            url: "/data/list",
+            method:"get",
+            dataType: "json",
+            //contentType: "application/x-www-form-urlencoded",
+            striped:true,//隔行变色
+            cache:false,  //是否使用缓存
+            showColumns:false,// 列
+//            toobar:'#toolbar',
+            pagination: true, //分页
+            paginationLoop:false,
+            paginationPreText:'上一页',
+            paginationNextText:'下一页',
+//            showFooter:true,//显示列脚
+//            showRefresh:true,//显示刷新
+            showPaginationSwitch:false,//是否显示数据条数选择框
+            sortable: false,           //是否启用排序
+            singleSelect: false,
+            search:false, //显示搜索框
+            buttonsAlign: "right", //按钮对齐方式
+            showRefresh:false,//是否显示刷新按钮
+            sidePagination: "server", //服务端处理分页
+            pageNumber:1,
+            pageSize:5,
+            pageList:[5,10, 25, 50, 100],
+            undefinedText:'--',
+            uniqueId: "id", //每一行的唯一标识，一般为主键列
+            queryParamsType:'',
+            queryParams: function () {
+                return {parentId:0,isDelete:0};
+            },
+            columns: [{
+                checkbox: true,
+                visible: true                  //是否显示复选框
+            }, {
+                field: 'fileName',
+                title: '文件名',
+                sortable: true
+            }, {
+                field: 'busiNo',
+                title: '局数据号',
+                sortable: true
+            }, {
+                field: 'fileNo',
+                title: '文号',
+                sortable: true/*,
+                formatter: emailFormatter*/
+            }, {
+                field: 'issueTime',
+                title: '下发时间'/*,
+                formatter: linkFormatter*/
+            }, {
+                field: 'fileSize',
+                title: '大小'
+            }, {
+                field: 'modifyTime',
+                title: '修改时间',
+                sortable: true
+            }],
+            onLoadSuccess: function () {
+                console.log("数据加载成功");
+            },
+            onLoadError: function () {
+                alert("数据加载失败！");
+            },
+            onDblClickRow: function (row, $element) {
+                var id = row.ID;
+                EditViewById(id, 'view');
+            },
+        });
+    }
+
+    var addFolder=function () {
+        console.log('新增文件夹');
+        var zTree=$.fn.zTree.getZTreeObj("tree");
+        var selectNodes=zTree.getSelectedNodes();
+        console.log(selectNodes);
+        if(selectNodes.length==0){
+            layer.alert("请选择要新建文件夹的根节点");
+        }else{
+            var fileName="新建文件夹";
+            fileName=containFileName(fileName,0,selectNodes[0]);
+            $.ajax({
+                type : "post",
+                dataType : "json",
+                url: "/data/tree",
+                data:{
+                    parentId:selectNodes[0].id,
+                    isParent:true,
+                    fileName:fileName,
+                    filePath:selectNodes[0].nodePath+"\\"+fileName
+                },
+                success: function (data) {
+                    console.log(data);
+                    var newNode={id:data.id,name:data.fileName,parentId:data.parentId,isParent:true,nodePath:selectNodes[0].nodePath+"\\"+data.fileName};
+                    newNode=zTree.addNodes(selectNodes[0],newNode,false);
+                    console.log(newNode);
+                    zTree.editName(newNode[0]);
+                    console.log(newNode);
+                },
+                error : function(XMLHttpRequest, textStatus, errorThrown) {
+                    console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                        + "-textStatus:" + textStatus);
+                }
+            });
+        }
+    }
+    
+    var refresh=function () {
+        window.location.reload();
+    }
+    
+    var getAllChild=function (parentNode) {
+        var ids=[];
+        ids.push(parentNode.id);
+        if(parentNode.isParent&&parentNode.children.length>0){
+            $.each(parentNode.children,function (index,obj) {
+                ids=ids.concat(getAllChild(obj));
+            });
+        }
+        return ids;
+    }
+    var deleteFolder = function () {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        if(zTree.getSelectedNodes().length!=0) {
+            var pormpt=zTree.getSelectedNodes()[0].isParent?"确定要删除该文件夹以及其下面的所有文件吗？":"确定要删除该文件吗？";
+            layer.confirm(pormpt, {
+                btn: ['确定', '取消'], //按钮
+                icon:3
+            }, function (index) {
+                var ids=getAllChild(zTree.getSelectedNodes()[0]).join(',');
+                console.log('获取目录下所有的节点id');
+                console.log(ids);
+               $.ajax({
+                    type : "delete",
+                    dataType : "json",
+                    url : "/data/tree/"+ids,
+                    success : function(result) {
+                        layer.close(index);
+                        layer.msg(result.message, {icon: 1});
+                        var parentNode=zTree.getSelectedNodes()[0];
+                        zTree.removeNode(zTree.getSelectedNodes()[0]);
+                        zTree.selectNode(parentNode);
+                        zTree.setting.callback.onClick(null,zTree.setting.treeId, parentNode);
+                    },
+                    error : function(XMLHttpRequest, textStatus, errorThrown) {
+                        console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                            + "-textStatus:" + textStatus);
+                    }
+                });
+            }, function (index) {
+                layer.close(index);
+            });
+        }else {
+            layer.alert("请选择要要删除的节点");
+        }
+    }
+    var move=function () {
+        var $table = $("#data_table_file");
+        var ids = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id;
+        });
+        if(ids != null && ids != ''){
+            console.log('需要移动的文件ids为：',ids);
+            $("#handle_status").val('');
+            layer.open({
+                type: 2,
+                title: '移动位置选择',
+                shadeClose: true,
+                shade: 0.8,
+                area: ['430px', '400px'],
+                content: '/data/list/folder',  //iframe的url
+                success: function(layero, index){
+                    var idsInput= $('#data_id',layero.find("iframe")[0].contentWindow.document);
+                    idsInput.val(ids.join(","));
+                },
+                end:function() {
+                    if ($("#handle_status").val()!=='') {
+                        var handle_status = JSON.parse($("#handle_status").val());
+                        console.log('handle_status====');
+                        console.log(handle_status);
+                        if (handle_status.success) {
+                            layer.msg('修改成功', {icon: 1});
+
+                            initTree();
+                            zTree.selectNode(destNode.getParentNode());
+                            zTree.setting.callback.onClick(null, zTree.setting.treeId, destNode.getParentNode());
+                        }
+                    }
+                }
+            });
+        }else{
+            layer.msg("请选择要移动的文件或文件夹",{ icon: 7,time: 2000 //2秒关闭（如果不配置，默认是3秒）
+            });
+        }
+    }
+
+
+    var modifyFolder=function () {
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        var $table = $("#data_table_file");
+        var ids = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id;
+        });
+        if(ids != null && ids != ''&&ids.length===1){
+            var titleName=$table.bootstrapTable('getSelections')[0].isFolder==1?'文件夹属性修改':'文件属性修改';
+            var destNode=zTree.getNodesByParam("id",ids[0],null)[0];
+            console.log('修改的文件id为：',ids[0]);
+            console.log('destNode',destNode);
+            var filePath=destNode.nodePath;
+            $("#handle_status").val('');
+            layer.open({
+                type: 2,
+                title: titleName,
+                shadeClose: true,
+                shade: 0.8,
+                area: ['582px', '400px'],
+                content: '/data/'+ids[0]+'/detail',  //iframe的url
+                success: function(layero, index){
+                    var filePathInput= $('#file_path',layero.find("iframe")[0].contentWindow.document);
+                    filePathInput.val(filePath);
+                },
+                end:function() {
+                    if ($("#handle_status").val()!=='') {
+                        var handle_status = JSON.parse($("#handle_status").val());
+                        console.log('handle_status====');
+                        console.log(handle_status);
+                        if (handle_status.success) {
+                            layer.msg('修改成功', {icon: 1});
+
+                            initTree();
+                            zTree.selectNode(destNode.getParentNode());
+                            zTree.setting.callback.onClick(null, zTree.setting.treeId, destNode.getParentNode());
+                        }
+                    }
+                }
+            });
+        }else{
+            layer.msg("请选中一行",{ icon: 7,time: 2000 //2秒关闭（如果不配置，默认是3秒）
+            });
+        }
+    }
+
+    var searchFolder=function (e) {
+        console.log(e);
+        console.log($('#search-form')[0]);
+        var data=$('#search-form').serializeJSON();
+        var zTree = $.fn.zTree.getZTreeObj("tree");
+        var $table = $("#data_table_file");
+        console.log('查询列表',data);
+        $.ajax({
+            url:'/data/list',
+            type : "get",
+            dataType : "json",
+            cache:false,//false是不缓存，true为缓存
+            async:true,//true为异步，false为同步
+            data:data,
+            success:function(data){
+                //if(result.success){
+                    zTree.selectNode(null);
+                    $table.bootstrapTable('load',data);
+                /*}else {
+                    layer.msg('加载列表信息失败',{icon:2});
+                }*/
+            },
+            error:function(){
+                //请求失败时
+                layer.msg('请求失败时，请检查网络连接',{icon:2});
+            }
+        });
+    }
+    
+    var recycleFolder=function (event) {
+        layer.open({
+            type: 2,
+            title: '回收站',
+            shadeClose: true,
+            shade: 0.8,
+            area: ['582px', '400px'],
+            content: '/data/recycle',  //iframe的url
+            success: function(layero, index){
+                var filePathInput= $('#file_path',layero.find("iframe")[0].contentWindow.document);
+                filePathInput.val(filePath);
+            },
+            end:function() {
+                if ($("#handle_status").val()!=='') {
+                    var handle_status = JSON.parse($("#handle_status").val());
+                    console.log('handle_status====');
+                    console.log(handle_status);
+                    if (handle_status.success) {
+                        layer.msg('修改成功', {icon: 1});
+
+                        initTree();
+                        zTree.selectNode(destNode.getParentNode());
+                        zTree.setting.callback.onClick(null, zTree.setting.treeId, destNode.getParentNode());
+                    }
+                }
+            }
+        });
+        
+    }
+
+
+    $(document).ready(function(){
+        initTree();
+        initList();
+
+        $('#folder-create').on('click',addFolder);
+        $('#btn-refresh').on('click',refresh);
+        $('#btn-delete').on('click',deleteFolder);
+        $('#btn-move').on('click',move);
+        $('#btn-modify').on('click',modifyFolder);
+        $('#btn-search').on('click',searchFolder);
+        $('#btn-recycle').on('click',recycleFolder);
+    });
+    //]]>
+</script>
+</html>

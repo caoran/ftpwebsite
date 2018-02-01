@@ -1,0 +1,2253 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE sqlMap PUBLIC "-//ibatis.apache.org//DTD SQL Map 2.0//EN" "http://ibatis.apache.org/dtd/sql-map-2.dtd">
+<config>
+	<src id="dbInspection" rowcntperpage="1">
+	<![CDATA[
+		filePath:[E:\work_tool\self_monitor.xml]
+	 ]]>
+	</src>
+	<src id="monitorDutyMan" rowcntperpage="1">
+	<![CDATA[
+		select g.current_man_name
+		from ipwf_job_standard_main a, ipwf_log g
+		where a.s_seq_id = g.m_s_seq_id
+		 and a.s_table_name = g.m_s_table_name
+		and a.s_title = '投诉处理日常工作(白班)'
+	]]>
+	</src>
+	<src id="complaintDutyMan" rowcntperpage="1">
+	<![CDATA[
+		select g.current_man_name
+		from ipwf_job_standard_main a, ipwf_log g
+		where a.s_seq_id = g.m_s_seq_id
+		 and a.s_table_name = g.m_s_table_name
+		and a.s_title = '投诉处理日常工作(白班)'
+	]]>
+	</src>
+	<src id="groupOrderChar" rowcntperpage="6">
+	<![CDATA[
+		select '两小时内' name,
+		   sum(case
+				 when (a.s_plan_end_time - sysdate) * 24 < 2 and
+					  (a.s_plan_end_time - sysdate) * 24 > 0 and a.s_life_state = 1 then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	union all
+	select '四小时内' name,
+		   sum(case
+				 when (a.s_plan_end_time - sysdate) * 24 < 4 and
+					  (a.s_plan_end_time - sysdate) * 24 > 0 and a.s_life_state = 1 then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	union all
+	select '六小时内' name,
+		   sum(case
+				 when (a.s_plan_end_time - sysdate) * 24 < 6 and
+					  (a.s_plan_end_time - sysdate) * 24 > 0 and a.s_life_state = 1 then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	union all
+	select '大于六小时内' name,
+		   sum(case
+				 when (a.s_plan_end_time - sysdate) * 24 > 6 and
+					  (a.s_plan_end_time - sysdate) * 24 > 0 and a.s_life_state = 1 then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	union all
+	select '已超时工单数' name,
+		   sum(case
+				 when ((a.s_Plan_End_Time < sysdate and
+					  a.s_create_time >
+					  TRUNC(LAST_DAY(ADD_MONTHS(SYSDATE, -1)) + 1) and
+					  a.s_life_state = 1) or (a.s_Plan_End_Time < a.s_lastedit_time and
+					  a.s_create_time >
+					  TRUNC(LAST_DAY(ADD_MONTHS(SYSDATE, -1)) + 1) and
+					  a.s_life_state = 2)) then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	union all
+	select '当月新建工单数' name,
+		   sum(case
+				 when a.s_create_time > TRUNC(LAST_DAY(ADD_MONTHS(SYSDATE, -1)) + 1) and
+					  a.s_life_state in (1, 2) then
+				  1
+				 else
+				  0
+			   end) value
+	  from ipwf_proc_evt_main a
+	 where a.s_create_man_name = '集团事件单处理人'
+	 ]]>
+	</src>
+	<src id="groupOrderTable" rowcntperpage="100">
+	<![CDATA[
+	select running_id, --工单流水号,
+		   title,
+		   create_time,
+		   plan_end_time,
+		   sheet_current_man,
+		   filename
+	  from (select t.s_running_id running_id,
+				   t.s_title title,
+				   t.s_create_time create_time,
+				   t.s_plan_end_time plan_end_time,
+				   t.s_sheet_current_man sheet_current_man,
+				   (case
+					 when b.id not in
+						  (select id
+							 from bomc.iptfn_bomcitsm_event a
+							where a.createtime >= sysdate - 1 / 4) then
+					  '未上报集团'
+					 when b.id in
+						  (select a.id
+							 from (select a.id,
+										  b.filename,
+										  max(a.createtime) time1,
+										  max(b.createtime) time2
+									 from bomc.iptfn_bomcitsm_cprevent a,
+										  bomc.iptfn_bomcitsm_event    b
+									where a.id = b.id
+									  and a.status != '关闭'
+									  and a.createtime >= sysdate - 1 / 4
+									group by a.id, b.filename) a
+							where a.time1 > a.time2
+							  and 'RS' || '_' || a.filename in
+								  (select filename
+									 from bomc.iptcn_pni_file_backinfo a
+									where a.filename like '%RS_EVENT%'
+									  and a.createtime >= sysdate - 1 / 4)) then
+					  '集团驳回'
+					 when b.id in
+						  (select id
+							 from bomc.iptfn_bomcitsm_event a
+							where 'RS' || '_' || a.filename not in
+								  (select filename
+									 from bomc.iptcn_pni_file_backinfo a
+									where a.filename like '%RS_EVENT%'
+									  and a.createtime >= sysdate - 1 / 4)
+							  and a.createtime >= sysdate - 1 / 4) then
+					  '未成功上报集团'
+				   end) filename
+			  from bomcbp.ipwf_proc_evt_main t, bomc.iptfn_bomcitsm_cprevent b
+			 where b.id = t.serial_no
+			   and t.s_life_state <> '2'
+			   and (t.s_create_time >= sysdate - 1 / 4 or
+				   to_date(b.createtime, 'yyyy-mm-dd hh24:mi:ss') >=
+				   sysdate - 1 / 4)) a
+	 where a.filename is not null
+	]]>
+	</src>
+	<src id="noticeSurvey" rowcntperpage="1">
+	<![CDATA[
+	select '交流网站' name, count(*) value
+	  from IPWF_PROC_DOP_CTF_MAIN a
+	 where a.info_type_name in
+		   ('集团公司交流网站通知：', '集团公司交流网站调查：')
+	   and a.s_create_time >= TRUNC(LAST_DAY(ADD_MONTHS(SYSDATE, -1)) + 1)
+	union all
+	select '协配流程' name, count(*) value
+	  from IPWF_PROC_DOP_CTF_MAIN a
+	 where a.info_type_name in
+		   ('集团公司交流网站通知：', '集团公司交流网站调查：')
+	   and a.s_create_time >= TRUNC(LAST_DAY(ADD_MONTHS(SYSDATE, -1)) + 1)
+	]]>
+	</src>
+	<src id="account" rowcntperpage="1">
+	<![CDATA[
+	select m.status,m.order_time from sqdz_msg m where m.event_time = (select max(event_time) from sqdz_msg)
+	]]>
+	</src>
+	<src id="highOrderSheet" rowcntperpage="6">
+	<![CDATA[
+	select '一般' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and order_level like '%一般%'
+	union all
+	select '严重' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and order_level like '%严重%'
+	union all
+	select '重大' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and order_level like '%重大%'
+	union all
+	select '特大' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and order_level like '%特大%'
+	union all
+	select '待签阅' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and order_level like '%待签阅%'
+	union all
+	select '超时数' name, count(*) value
+	  from gaoe_msg m
+	 where m.event_time = (select max(event_time) from gaoe_msg)
+	   and m.over_time > sysdate
+	]]>
+	</src>
+	<src id="elecDeclaration" rowcntperpage="4">
+	<![CDATA[
+	select '交流网站待处理' name, count(*) value
+	  from dzsg_msg m
+	 where m.event_time = (select max(event_time) from dzsg_msg)
+	union all
+	select '两天内将超时' name, count(*) value
+	  from dzsg_msg m
+	 where m.over_time < sysdate + 2
+	   and m.event_time = (select max(event_time) from dzsg_msg)
+	union all
+	select 'BOMC待派发' name, count(*) value
+	  from ipwf_proc_dop_al_main a
+	 where a.s_sheet_current_man = '电子申告业务帮助台'
+	--and a.info_type_name = '集团公司交流网站电子申告'
+	--and a.s_life_state = '1'
+	]]>
+	</src>
+	<src id="collectionPoint" rowcntperpage="100">
+	<![CDATA[
+	select  h.instance_id,h.org_alarm_title,h.event_time,q.alarm_ne_ip
+	from iptfa_alarm_hnvoice_queue q
+	left join tfa_alarm_act  h on q.alarm_sid = (h.s_fp0||'_'||h.s_fp1||'_'||h.s_fp2||'_'||h.s_fp3)
+	where 1=1
+	and q.voice_msg like '%采集点%'
+	]]>
+	</src>
+	<src id="dutyAlarm" rowcntperpage="200">
+	<![CDATA[
+	select rownum,b.alarm_title,
+       b.alarm_text,
+       b.active_status,
+       b.alarm_ne_ip,
+       b.event_time,
+       b.name1 || b.telno1 telno1,
+       b.name2 || b.telno2 telno2,
+       b.name3 || b.telno3 telno3,
+       b.read_date,
+       b.send_status,
+       b.send_date
+  from (select *
+          from (select (select u1.name
+                          from iptca_webfm_userinfo u1
+                         where u1.phone = q.telno1) name1,
+                       (select u2.name
+                          from iptca_webfm_userinfo u2
+                         where u2.phone = q.telno2) name2,
+                       (select u3.name
+                          from iptca_webfm_userinfo u3
+                         where u3.phone = q.telno3) name3,
+                       (select t1.send_status
+                          from iptfa_alarm_hnvoice_tmpdial t1
+                         where t1.telno = q.telno1
+                           and (q.alarm_last_event_time - t1.alarm_last_date) between 0 and
+                               10 / 1440) status1,
+                       (select t2.send_status
+                          from iptfa_alarm_hnvoice_tmpdial t2
+                         where t2.telno = q.telno2
+                           and (q.alarm_last_event_time - t2.alarm_last_date) between 0 and
+                               10 / 1440) status2,
+                       (select t3.send_status
+                          from iptfa_alarm_hnvoice_tmpdial t3
+                         where t3.telno = q.telno3
+                           and (q.alarm_last_event_time - t3.alarm_last_date) between 0 and
+                               10 / 1440) status3,
+                       his.alarm_title,
+                       his.alarm_text,
+                       q.alarm_ne_ip,
+                       q.alarm_sid,
+                       his.event_time,
+                       q.telno1,
+                       q.telno2,
+                       q.telno3,
+                       q.read_date,
+                       q.send_status,
+                       q.send_date,
+                       his.active_status,
+                       q.call_id,
+                       q.man_call_case,
+                       q.voice_msg
+                  from Iptfa_alarm_hnvoice_queue q,
+                       tfa_alarm_his1121         his
+                 order by Call_id desc) a) b
+	]]>
+	</src>
+	<src id="commonAlarm" rowcntperpage="200">
+	<![CDATA[
+	select rownum,b.alarm_title,
+       b.alarm_text,
+       b.active_status,
+       b.alarm_ne_ip,
+       b.event_time,
+       b.name1 || b.telno1 telno1,
+       b.name2 || b.telno2 telno2,
+       b.name3 || b.telno3 telno3,
+       b.read_date,
+       b.send_status,
+       b.send_date
+		 from(select a.* from(
+		select (
+		select u1.name from iptca_webfm_userinfo u1  
+		where u1.phone =q.telno1) name1,(
+		select u2.name from bomc.iptca_webfm_userinfo u2  
+		where u2.phone =q.telno2) name2,(select u3.name 
+		from iptca_webfm_userinfo u3  
+		where u3.phone =q.telno3) name3,(
+		select t1.send_status 
+		from iptfa_alarm_hnvoice_tmpdial t1 
+		where t1.telno=q.telno1 and (q.alarm_last_event_time-t1.alarm_last_date) between 0 and 10/1440 )status1,(
+		select t2.send_status from fms.iptfa_alarm_hnvoice_tmpdial t2 
+		where t2.telno=q.telno2 and (q.alarm_last_event_time-t2.alarm_last_date) between 0 and 10/1440)status2,(
+		select t3.send_status from fms.iptfa_alarm_hnvoice_tmpdial t3 where t3.telno=q.telno3 and (q.alarm_last_event_time-t3.alarm_last_date) between 0 and 10/1440)status3,his.alarm_title,his.alarm_text,q.alarm_ne_ip,q.alarm_sid,his.event_time,q.telno1,q.telno2,q.telno3,q.read_date,q.send_status,q.send_date,his.active_status,q.call_id,q.man_call_case,voice_msg 
+		from fms.Iptfa_alarm_hnvoice_queue q , fms.tfa_alarm_his his 
+		where his.fp0=to_number(substr(q.alarm_orgfp, 0,instr(q.alarm_orgfp, '_') - 1)) 
+		and his.fp1=to_number(substr(q.alarm_orgfp,instr(q.alarm_orgfp, '_')+1,instr(q.alarm_orgfp, '_',-1,2)-instr(q.alarm_orgfp, '_')-1 ))  
+		and q.insert_date>=sysdate-2  order by Call_id desc) a ) b 
+	]]>
+	</src>
+	<src id="soundAlarmCount" rowcntperpage="5">
+	<![CDATA[
+		select '数据库' name, count(a.voice_msg) value
+		  from iptfa_alarm_hnvoice_queue a
+		 where a.voice_msg like '%数据库%'
+		union ALL
+		select '集团单' name, count(b.voice_msg) value
+		  from iptfa_alarm_hnvoice_queue b
+		 where b.voice_msg like '%集团%'
+		union ALL
+		select '采集点' name, count(c.voice_msg) value
+		  from iptfa_alarm_hnvoice_queue c
+		 where  c.voice_msg like '%采集点%'
+		union ALL
+		select '其他' name, count(d.voice_msg) value
+		  from iptfa_alarm_hnvoice_queue d
+		 where  d.voice_msg not like '%集团%'
+		   and d.voice_msg not like '%采集点%'
+		   and d.voice_msg not like '%数据库%'
+	 ]]>
+	</src>
+	<src id="soundAlarmDb" rowcntperpage="100">
+	<![CDATA[
+	select rownum,
+		   a.voice_msg,
+		   a.event_time,
+		   a.alarm_ne_name,
+		   a.alarm_ne_ip,
+		   a.telno1,
+		   a.telno2,
+		   a.telno3,
+		   a.send_status
+	  from iptfa_alarm_hnvoice_queue a
+	 where a.voice_msg like '%数据库%'
+	  ]]>
+	</src>
+	<src id="soundAlarmGroup" rowcntperpage="100">
+	<![CDATA[
+	select rownum,
+		   a.voice_msg,
+		   a.event_time,
+		   a.alarm_ne_name,
+		   a.alarm_ne_ip,
+		   a.telno1,
+		   a.telno2,
+		   a.telno3,
+		   a.send_status
+	  from iptfa_alarm_hnvoice_queue a
+	 where a.voice_msg like '%集团%'
+	  ]]>
+	</src>
+	<src id="soundAlarmPoint" rowcntperpage="100">
+	<![CDATA[
+	select rownum,
+		   a.voice_msg,
+		   a.event_time,
+		   a.alarm_ne_name,
+		   a.alarm_ne_ip,
+		   a.telno1,
+		   a.telno2,
+		   a.telno3,
+		   a.send_status
+	  from iptfa_alarm_hnvoice_queue a
+	 where a.voice_msg like '%采集点%'
+	  ]]>
+	</src>
+	<src id="soundAlarmOther" rowcntperpage="100">
+	<![CDATA[
+	select rownum,
+		   a.voice_msg,
+		   a.event_time,
+		   a.alarm_ne_name,
+		   a.alarm_ne_ip,
+		   a.telno1,
+		   a.telno2,
+		   a.telno3,
+		   a.send_status
+	  from iptfa_alarm_hnvoice_queue a
+	 where d.voice_msg not like '%集团%'
+		   and d.voice_msg not like '%采集点%'
+		   and d.voice_msg not like '%数据库%'
+	  ]]>
+	</src>
+	<src id="callFailCount" rowcntperpage="6">
+	<![CDATA[
+	select q.name name, q.cut value
+	  from (select b.name, count(b.name) cut
+			  from iptfa_alarm_hnvoice_tmpdial a,
+				   iptca_webfm_userinfo       b
+			 where
+			   a.alarm_last_date > sysdate - 2 and
+				a.send_status = 2
+			   and a.telno = b.phone
+			 group by b.name
+			 order by cut desc) q
+	 where rownum < 6
+	]]>
+	</src>
+	<src id="notice" rowcntperpage="10">
+	<![CDATA[
+	select fo.seqId,fo.title, fo.create_time
+	  from (select a.title, a.create_time
+			  from IPBP_BULLETIN_INFO a
+			 where a.dept_scope_ids = 'ALL'
+			 order by a.s_seq_id desc) fo
+	 where rownum < 10
+	]]>
+	</src>
+	<src id="partakeWorksheet_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveRate_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when guandanv = 0 then
+					0
+				   else
+					oneselfv / guandanv
+				 end) * 100,
+				 2) value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveCount_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) value  --一次解决工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="selfOneSolveRate_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --一次自解率
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="dealLong_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value --平均处理时长
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="turnSendRate_d" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --转派率 
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '楚伟涛') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '米彦伟') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '张帆') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '李莹莹') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="deptOneSolveRate_d" rowcntperpage="200">
+	<![CDATA[
+	select totalunion.time name,
+		   to_char(round(selfunion.selfnum / totalunion.totalnum, 3) * 100) value
+	  from (select count(distinct t.show_serial_no) totalnum,
+				   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+				   --to_char(t.archive_date,'yyyy-IW') --周统计
+				   --to_char(t.archive_date, 'yyyy-mm') --月统计  
+					time
+			  from bomcbp.view_process_ng t
+			 where t.archive_date >= trunc(sysdate - 14)
+			   and t.archive_date < trunc(sysdate)
+			 group by to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+			--to_char(t.archive_date,'yyyy-IW')--周统计
+			--to_char(t.archive_date, 'yyyy-mm') --月统计 
+			) totalunion,
+		   (select count(id) selfnum, time
+			  from (select t.show_serial_no,
+						   count(distinct t.evt_id) id,
+						   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+						   --to_char(t.archive_date,'yyyy-IW') --周统计
+						   --to_char(t.archive_date, 'yyyy-mm') --月统计
+							time
+					  from view_process_ng t
+					 where t.archive_date >= trunc(sysdate - 14)
+					   and t.archive_date < trunc(sysdate)
+					 group by t.show_serial_no,
+							  to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+					--to_char(t.archive_date,'yyyy-IW') --周统计
+					--to_char(t.archive_date, 'yyyy-mm') --月统计
+					having count(distinct t.evt_id) = 1)
+			 group by time) selfunion
+	 where totalunion.time = selfunion.time
+	union
+	SELECT S_DEPT depname, --trunc(sysdate-1) gather_date,
+		   to_char(archive_date, 'yyyy-mm-dd') --日统计
+		   --to_char(archive_date, 'yyyy-IW') --周统计
+		   --to_char(archive_date,'yyyy-mm') --月统计
+			time,
+		   ROUND(SUM(CASE
+					   WHEN IS_ONE = 1 AND F_DEPT = S_DEPT THEN
+						1
+					   ELSE
+						0
+					 END) / SUM(1),
+				 4) * 100 || '%' rate
+	  FROM (SELECT DISTINCT NGID, S_DEPT, F_DEPT, archive_date, IS_ONE
+			  FROM bomcbp.NG_DEPT_SOLVE S)
+	 where archive_date >= trunc(sysdate - 13)
+	   and archive_date < trunc(sysdate)
+	 GROUP BY S_DEPT, to_char(archive_date, 'yyyy-mm-dd') --日统计
+	--to_char(archive_date, 'yyyy-IW') --周统计
+	--to_char(archive_date,'yyyy-mm') --月统计
+	HAVING S_DEPT = '业务支援中心'
+	]]>
+	</src>
+	<src id="deptOneSolveRate_d" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, ROUND((sum(TIME) / sum(COUNT)) / 60, 2) value
+	  FROM (SELECT '业务支援中心' DEPT,
+				   COUNT(T.SHOW_SERIAL_NO) COUNT,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   SUM(T.JFZC_SOLVE_TIME + YWZC_SOLVE_TIME + JFZW_SOLVE_TIME +
+					   XTWH_SOLVE_TIME + JK_SOLVE_TIME) TIME
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= trunc(sysdate - 1, 'mm')
+			   and archive_date < trunc(sysdate)
+			   and length(T.S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+	<src id="deptDealLong_d" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, sum(COUNT) value
+	  FROM (SELECT '业务支援中心' DEPT_name,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   count(T.SHOW_SERIAL_NO) COUNT
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= sysdate - 13
+			   and archive_date < trunc(sysdate)
+			   and length(S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+	<src id="partakeWorksheet_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveRate_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when guandanv = 0 then
+					0
+				   else
+					oneselfv / guandanv
+				 end) * 100,
+				 2) value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveCount_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) value  --一次解决工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="selfOneSolveRate_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --一次自解率
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="dealLong_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value --平均处理时长
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="turnSendRate_w" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --转派率 
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '楚伟涛') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '米彦伟') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '张帆') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '李莹莹') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="deptOneSolveRate_w" rowcntperpage="200">
+	<![CDATA[
+	select totalunion.time name,
+		   to_char(round(selfunion.selfnum / totalunion.totalnum, 3) * 100) value
+	  from (select count(distinct t.show_serial_no) totalnum,
+				   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+				   --to_char(t.archive_date,'yyyy-IW') --周统计
+				   --to_char(t.archive_date, 'yyyy-mm') --月统计  
+					time
+			  from bomcbp.view_process_ng t
+			 where t.archive_date >= trunc(sysdate - 14)
+			   and t.archive_date < trunc(sysdate)
+			 group by to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+			--to_char(t.archive_date,'yyyy-IW')--周统计
+			--to_char(t.archive_date, 'yyyy-mm') --月统计 
+			) totalunion,
+		   (select count(id) selfnum, time
+			  from (select t.show_serial_no,
+						   count(distinct t.evt_id) id,
+						   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+						   --to_char(t.archive_date,'yyyy-IW') --周统计
+						   --to_char(t.archive_date, 'yyyy-mm') --月统计
+							time
+					  from view_process_ng t
+					 where t.archive_date >= trunc(sysdate - 14)
+					   and t.archive_date < trunc(sysdate)
+					 group by t.show_serial_no,
+							  to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+					--to_char(t.archive_date,'yyyy-IW') --周统计
+					--to_char(t.archive_date, 'yyyy-mm') --月统计
+					having count(distinct t.evt_id) = 1)
+			 group by time) selfunion
+	 where totalunion.time = selfunion.time
+	union
+	SELECT S_DEPT depname, --trunc(sysdate-1) gather_date,
+		   to_char(archive_date, 'yyyy-mm-dd') --日统计
+		   --to_char(archive_date, 'yyyy-IW') --周统计
+		   --to_char(archive_date,'yyyy-mm') --月统计
+			time,
+		   ROUND(SUM(CASE
+					   WHEN IS_ONE = 1 AND F_DEPT = S_DEPT THEN
+						1
+					   ELSE
+						0
+					 END) / SUM(1),
+				 4) * 100 || '%' rate
+	  FROM (SELECT DISTINCT NGID, S_DEPT, F_DEPT, archive_date, IS_ONE
+			  FROM bomcbp.NG_DEPT_SOLVE S)
+	 where archive_date >= trunc(sysdate - 13)
+	   and archive_date < trunc(sysdate)
+	 GROUP BY S_DEPT, to_char(archive_date, 'yyyy-mm-dd') --日统计
+	--to_char(archive_date, 'yyyy-IW') --周统计
+	--to_char(archive_date,'yyyy-mm') --月统计
+	HAVING S_DEPT = '业务支援中心'
+	]]>
+	</src>
+	<src id="deptOneSolveRate_w" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, ROUND((sum(TIME) / sum(COUNT)) / 60, 2) value
+	  FROM (SELECT '业务支援中心' DEPT,
+				   COUNT(T.SHOW_SERIAL_NO) COUNT,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   SUM(T.JFZC_SOLVE_TIME + YWZC_SOLVE_TIME + JFZW_SOLVE_TIME +
+					   XTWH_SOLVE_TIME + JK_SOLVE_TIME) TIME
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= trunc(sysdate - 1, 'mm')
+			   and archive_date < trunc(sysdate)
+			   and length(T.S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+	<src id="deptDealLong_w" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, sum(COUNT) value
+	  FROM (SELECT '业务支援中心' DEPT_name,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   count(T.SHOW_SERIAL_NO) COUNT
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= sysdate - 13
+			   and archive_date < trunc(sysdate)
+			   and length(S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+	<src id="partakeWorksheet_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveRate_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when guandanv = 0 then
+					0
+				   else
+					oneselfv / guandanv
+				 end) * 100,
+				 2) value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) guandanv,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) oneselfv
+			
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="oneSolveCount_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' then
+						  1
+						 else
+						  0
+					   end) value  --一次解决工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' then
+						  1
+						 else
+						  0
+					   end) value
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="selfOneSolveRate_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --一次自解率
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '楚伟涛' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '楚伟涛' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '米彦伟' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '张帆' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' and s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value1, --自解决工单量,
+				   sum(case
+						 when s.help_desk_solve_once = 'TRUE' and
+							  s.help_desk_solve_man = '李莹莹' and
+							  s.help_transfer_times <= 0 then
+						  1
+						 else
+						  0
+					   end) value2 --一次自解决工单量,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="dealLong_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time, handler, value --平均处理时长
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '米彦伟' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '张帆' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when s.s_end_man_name = '李莹莹' then
+						  to_number(s.help_desk_solve_time)
+						 else
+						  0
+					   end) value --平均处理时长,
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="turnSendRate_m" rowcntperpage="200">
+	<![CDATA[
+	select to_char(time, 'yyyy-mm-dd') time,
+		   handler,
+		   round((case
+				   when value1 = 0 then
+					0
+				   else
+					value2 / value1
+				 end) * 100,
+				 2) value --转派率 
+	  from (select '楚伟涛' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '楚伟涛') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '楚伟涛') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '米彦伟' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '米彦伟') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '米彦伟') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '张帆' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '张帆') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '张帆') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			union all
+			select '李莹莹' handler,
+				   trunc(s.archive_date) time, --日统计
+				   sum(case
+						 when instr(s.s_sheet_pre_man, '李莹莹') > 0 then
+						  1
+						 else
+						  0
+					   end) value1, --参与工单量,
+				   sum(case
+						 when instr(s.help_transfer_man_name, '李莹莹') > 0 and
+							  s.help_transfer_times > 0 then
+						  1
+						 else
+						  0
+					   end) value2 --转派工单量
+			  from check_sr_problem_process s
+			 where 1 = 1
+			   and s.archive_date >= sysdate - 13
+			   and s.archive_date <= sysdate - 1
+			   and s.m_s_table_name = 'IPWF_PROC_EVT_MAIN'
+			 group by trunc(s.archive_date) --日统计
+			)
+	 order by handler, time
+	]]>
+	</src>
+	<src id="deptOneSolveRate_m" rowcntperpage="200">
+	<![CDATA[
+	select totalunion.time name,
+		   to_char(round(selfunion.selfnum / totalunion.totalnum, 3) * 100) value
+	  from (select count(distinct t.show_serial_no) totalnum,
+				   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+				   --to_char(t.archive_date,'yyyy-IW') --周统计
+				   --to_char(t.archive_date, 'yyyy-mm') --月统计  
+					time
+			  from bomcbp.view_process_ng t
+			 where t.archive_date >= trunc(sysdate - 14)
+			   and t.archive_date < trunc(sysdate)
+			 group by to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+			--to_char(t.archive_date,'yyyy-IW')--周统计
+			--to_char(t.archive_date, 'yyyy-mm') --月统计 
+			) totalunion,
+		   (select count(id) selfnum, time
+			  from (select t.show_serial_no,
+						   count(distinct t.evt_id) id,
+						   to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+						   --to_char(t.archive_date,'yyyy-IW') --周统计
+						   --to_char(t.archive_date, 'yyyy-mm') --月统计
+							time
+					  from view_process_ng t
+					 where t.archive_date >= trunc(sysdate - 14)
+					   and t.archive_date < trunc(sysdate)
+					 group by t.show_serial_no,
+							  to_char(t.archive_date, 'yyyy-mm-dd') --日统计
+					--to_char(t.archive_date,'yyyy-IW') --周统计
+					--to_char(t.archive_date, 'yyyy-mm') --月统计
+					having count(distinct t.evt_id) = 1)
+			 group by time) selfunion
+	 where totalunion.time = selfunion.time
+	union
+	SELECT S_DEPT depname, --trunc(sysdate-1) gather_date,
+		   to_char(archive_date, 'yyyy-mm-dd') --日统计
+		   --to_char(archive_date, 'yyyy-IW') --周统计
+		   --to_char(archive_date,'yyyy-mm') --月统计
+			time,
+		   ROUND(SUM(CASE
+					   WHEN IS_ONE = 1 AND F_DEPT = S_DEPT THEN
+						1
+					   ELSE
+						0
+					 END) / SUM(1),
+				 4) * 100 || '%' rate
+	  FROM (SELECT DISTINCT NGID, S_DEPT, F_DEPT, archive_date, IS_ONE
+			  FROM bomcbp.NG_DEPT_SOLVE S)
+	 where archive_date >= trunc(sysdate - 13)
+	   and archive_date < trunc(sysdate)
+	 GROUP BY S_DEPT, to_char(archive_date, 'yyyy-mm-dd') --日统计
+	--to_char(archive_date, 'yyyy-IW') --周统计
+	--to_char(archive_date,'yyyy-mm') --月统计
+	HAVING S_DEPT = '业务支援中心'
+	]]>
+	</src>
+	<src id="deptOneSolveRate_m" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, ROUND((sum(TIME) / sum(COUNT)) / 60, 2) value
+	  FROM (SELECT '业务支援中心' DEPT,
+				   COUNT(T.SHOW_SERIAL_NO) COUNT,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   SUM(T.JFZC_SOLVE_TIME + YWZC_SOLVE_TIME + JFZW_SOLVE_TIME +
+					   XTWH_SOLVE_TIME + JK_SOLVE_TIME) TIME
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= trunc(sysdate - 1, 'mm')
+			   and archive_date < trunc(sysdate)
+			   and length(T.S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+	<src id="deptDealLong_m" rowcntperpage="200">
+	<![CDATA[
+	SELECT time_num name, sum(COUNT) value
+	  FROM (SELECT '业务支援中心' DEPT_name,
+				   to_char(t.archive_date, 'yyyy-mm-dd') time_num,
+				   count(T.SHOW_SERIAL_NO) COUNT
+			  FROM CHECK_SR_PROBLEM_PROCESS T
+			 WHERE archive_date >= sysdate - 13
+			   and archive_date < trunc(sysdate)
+			   and length(S_SHEET_PRE_DEPT) > 0
+			 group by t.archive_date)
+	 group by time_num
+	 order by time_num
+	]]>
+	</src>
+</config>

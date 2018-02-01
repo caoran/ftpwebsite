@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head>
+    <title>移动位置选择</title>
+    <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/main_style.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/font-awesome.min.css}" media="screen" />
+
+</head>
+<body>
+<div class="grid-table">
+    <table   id="data_table_file">
+    </table>
+</div>
+
+</body>
+<script th:src="@{/js/html5shiv.min.js}"></script>
+<script th:src="@{/js/jquery-1.11.0.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table.js}"></script>
+<script type="text/javascript" th:src="@{/js/jquery.serializejson.min.js}"></script>
+<script type="text/javascript" th:src="@{/js/layer/layer.js}"></script>
+<script>
+    //<![CDATA[
+
+    function initList(){
+        console.log("开始加载列表数据");
+        $('#data_table_file').bootstrapTable({
+            url: "/data/list",
+            method:"get",
+            dataType: "json",
+            //contentType: "application/x-www-form-urlencoded",
+            striped:true,//隔行变色
+            cache:false,  //是否使用缓存
+            showColumns:false,// 列
+//            toobar:'#toolbar',
+            pagination: true, //分页
+            paginationLoop:false,
+            paginationPreText:'上一页',
+            paginationNextText:'下一页',
+//            showFooter:true,//显示列脚
+//            showRefresh:true,//显示刷新
+            showPaginationSwitch:false,//是否显示数据条数选择框
+            sortable: false,           //是否启用排序
+            singleSelect: false,
+            search:false, //显示搜索框
+            buttonsAlign: "right", //按钮对齐方式
+            showRefresh:false,//是否显示刷新按钮
+            sidePagination: "server", //服务端处理分页
+            pageNumber:1,
+            pageSize:5,
+            pageList:[5,10, 25, 50, 100],
+            undefinedText:'--',
+            uniqueId: "id", //每一行的唯一标识，一般为主键列
+            queryParamsType:'',
+            queryParams: function () {
+                return {isDelete:0};
+            },
+            columns: [{
+                checkbox: true,
+                visible: true                  //是否显示复选框
+            }, {
+                field: 'fileName',
+                title: '文件名',
+                sortable: true
+            }, {
+                field: 'busiNo',
+                title: '局数据号',
+                sortable: true
+            }, {
+                field: 'fileNo',
+                title: '文号',
+                sortable: true/*,
+                formatter: emailFormatter*/
+            }, {
+                field: 'issueTime',
+                title: '下发时间'/*,
+                formatter: linkFormatter*/
+            }, {
+                field: 'fileSize',
+                title: '大小'
+            }, {
+                field: 'modifyTime',
+                title: '删除时间',
+                sortable: true
+            }],
+            onLoadSuccess: function () {
+                console.log("数据加载成功");
+            },
+            onLoadError: function () {
+                alert("数据加载失败！");
+            },
+            onDblClickRow: function (row, $element) {
+                var id = row.ID;
+                EditViewById(id, 'view');
+            },
+        });
+    }
+
+
+    $(document).ready(function(){
+        var index = parent.layer.getFrameIndex(window.name);
+
+        $("#btn_cancle").on('click',function () {
+            parent.layer.close(index);
+        })
+    });
+    //]]>
+</script>
+</html>
