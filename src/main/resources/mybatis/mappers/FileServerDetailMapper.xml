@@ -5,6 +5,8 @@
     <id column="ID" jdbcType="VARCHAR" property="id" />
     <result column="FILE_NAME" jdbcType="VARCHAR" property="fileName" />
     <result column="BUSI_NO" jdbcType="VARCHAR" property="busiNo" />
+    <result column="FILE_ID" jdbcType="VARCHAR" property="fileId" />
+    <result column="RELATIVE_PATH" jdbcType="VARCHAR" property="relativePath" />
     <result column="FILE_NO" jdbcType="VARCHAR" property="fileNo" />
     <result column="ISSUE_TIME" jdbcType="TIMESTAMP" property="issueTime" />
     <result column="FILE_SIZE" jdbcType="VARCHAR" property="fileSize" />
@@ -25,6 +27,13 @@
     <include refid="Base_Column_List" />
     from INS_FILE_SERVER_DETAIL
     where ID = #{id,jdbcType=VARCHAR}
+  </select>
+
+<select id="getByParentIdAndName" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from INS_FILE_SERVER_DETAIL
+    where PARENT_ID = #{id,jdbcType=VARCHAR} and FILE_NAME = #{fileName,jdbcType=VARCHAR} and IS_DELETE=0
   </select>
 
 <select id="getFileDetailList" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail" resultMap="BaseResultMap">
@@ -71,13 +80,68 @@
         <if test="modifyUserId != null">
             and  MODIFY_USER_ID = #{modifyUserId}
         </if>
-        <if test="issueStartTime != null and issueEndTime != null">
-            <![CDATA[  and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')>= issueStartTime and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')<= issueEndTime]]>
+        <if test="issueStartTime != '' and issueEndTime != '' and issueStartTime != null and issueEndTime != null">
+            <![CDATA[  and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')>= #{issueStartTime} and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')<= #{issueEndTime}]]>
         </if>
-        <if test="modifyStartTime != null and modifyEndTime != null">
-            <![CDATA[  and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')>= modifyStartTime and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')<= modifyEndTime]]>
+        <if test="modifyStartTime != '' and modifyEndTime != '' and modifyStartTime != null and modifyEndTime != null">
+            <![CDATA[  and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')>= #{modifyStartTime} and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')<= #{modifyEndTime}]]>
         </if>
     </where>
+    order by MODIFY_TIME desc nulls last,FILE_NAME asc
+  </select>
+
+<select id="getRecycleFileDetailList" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail" resultMap="BaseResultMap">
+    SELECT m.ID,m.file_id,m.relative_path,n.FILE_NAME, n.BUSI_NO,n.FILE_NO, n.ISSUE_TIME, n.FILE_SIZE, n.IS_FOLDER, n.PARENT_ID, n.MODIFY_TIME, n.MODIFY_USER_ID
+    FROM INS_RECYCLE_FILE_DETAIL m,INS_FILE_SERVER_DETAIL n where m.file_id=n.id
+    <if test="id != null">
+        and m.id = #{id}
+    </if>
+    <if test="fileId != null">
+        and m.file_id = #{fileId}
+    </if>
+    <if test="fileName != null">
+        and n.FILE_NAME = #{fileName}
+    </if>
+    <if test="busiNo != null">
+        and n.BUSI_NO like CONCAT('%',CONCAT(#{busiNo},'%'))
+    </if>
+    <if test="fileNo != null">
+        and n.FILE_NO  like CONCAT('%',CONCAT(#{fileNo},'%'))
+    </if>
+    <if test="issueTime != null">
+        and n.ISSUE_TIME = #{issueTime}
+    </if>
+    <if test="fileSize != null">
+        and  n.FILE_SIZE = #{fileSize}
+    </if>
+    <if test="isFolder != null">
+        and  n.IS_FOLDER = #{isFolder}
+    </if>
+    <if test="parentId != null">
+        and  n.PARENT_ID = #{parentId}
+    </if>
+    <if test="isDelete != null">
+        and n.IS_DELETE = #{isDelete}
+    </if>
+    <if test="createTime != null">
+        and n.CREATE_TIME = #{createTime}
+    </if>
+    <if test="createUserId != null">
+        and n.CREATE_USER_ID = #{createUserId}
+    </if>
+    <if test="modifyTime != null">
+        and n.MODIFY_TIME = #{modifyTime}
+    </if>
+    <if test="modifyUserId != null">
+        and  n.MODIFY_USER_ID = #{modifyUserId}
+    </if>
+    <if test="issueStartTime != null and issueEndTime != null">
+        <![CDATA[  and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')>= n.issueStartTime and TO_CHAR(ISSUE_TIME,'yyyy-MM-dd')<= n.issueEndTime]]>
+    </if>
+    <if test="modifyStartTime != null and modifyEndTime != null">
+        <![CDATA[  and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')>= n.modifyStartTime and TO_CHAR(MODIFY_TIME,'yyyy-MM-dd')<= n.modifyEndTime]]>
+    </if>
+    order by MODIFY_TIME desc nulls last
   </select>
 
     <select id="getFileTree" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail" resultMap="BaseResultMap">
@@ -85,53 +149,63 @@
             <include refid="Base_Column_List"/>
         from INS_FILE_SERVER_DETAIL t
         <where>
-        <if test="id != null">
-            and id = #{id}
-        </if>
-        <if test="fileName != null">
-            and FILE_NAME = #{fileName}
-        </if>
-        <if test="busiNo != null">
-            and BUSI_NO = #{busiNo}
-        </if>
-        <if test="fileNo != null">
-            and FILE_NO = #{fileNo}
-        </if>
-        <if test="issueTime != null">
-            and ISSUE_TIME = #{issueTime}
-        </if>
-        <if test="fileSize != null">
-            and  FILE_SIZE = #{fileSize}
-        </if>
-        <if test="isFolder != null">
-            and  IS_FOLDER = #{isFolder}
-        </if>
-        <if test="parentId != null">
-            and  PARENT_ID = #{parentId}
-        </if>
-        <if test="isDelete != null">
-            and IS_DELETE = #{isDelete}
-        </if>
-        <if test="createTime != null">
-            and CREATE_TIME = #{createTime}
-        </if>
-        <if test="createUserId != null">
-            and CREATE_USER_ID = #{createUserId}
-        </if>
-        <if test="modifyTime != null">
-            and MODIFY_TIME = #{modifyTime}
-        </if>
-        <if test="modifyUserId != null">
-            and  MODIFY_USER_ID = #{modifyUserId}
-        </if>
+                <if test="id != null">
+                    and id = #{id}
+                </if>
+                <if test="fileName != null">
+                    and FILE_NAME = #{fileName}
+                </if>
+                <if test="busiNo != null">
+                    and BUSI_NO = #{busiNo}
+                </if>
+                <if test="fileNo != null">
+                    and FILE_NO = #{fileNo}
+                </if>
+                <if test="issueTime != null">
+                    and ISSUE_TIME = #{issueTime}
+                </if>
+                <if test="fileSize != null">
+                    and  FILE_SIZE = #{fileSize}
+                </if>
+                <if test="isFolder != null">
+                    and  IS_FOLDER = #{isFolder}
+                </if>
+                <if test="parentId != null">
+                    and  PARENT_ID = #{parentId}
+                </if>
+                <if test="isDelete != null">
+                    and IS_DELETE = #{isDelete}
+                </if>
+                <if test="createTime != null">
+                    and CREATE_TIME = #{createTime}
+                </if>
+                <if test="createUserId != null">
+                    and CREATE_USER_ID = #{createUserId}
+                </if>
+                <if test="modifyTime != null">
+                    and MODIFY_TIME = #{modifyTime}
+                </if>
+                <if test="modifyUserId != null">
+                    and  MODIFY_USER_ID = #{modifyUserId}
+                </if>
         </where>
-        START WITH parent_id = '0' and is_folder = 1
+        START WITH parent_id = '0'  and is_delete=0
         CONNECT BY   parent_id =  PRIOR id
+        order  siblings by MODIFY_TIME desc nulls last,FILE_NAME asc
     </select>
 
   <delete id="deleteById" parameterType="java.lang.String">
     delete from INS_FILE_SERVER_DETAIL
     where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+
+  <delete id="deleteByParentId" parameterType="java.lang.String">
+    delete from INS_FILE_SERVER_DETAIL where id in (
+        SELECT id FROM INS_FILE_SERVER_DETAIL
+        where is_delete=1
+        START WITH parent_id = #{id,jdbcType=VARCHAR}
+       CONNECT BY   parent_id =  PRIOR id
+    )
   </delete>
 
   <insert id="save" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail">
@@ -219,6 +293,29 @@
       </if>
     </trim>
   </insert>
+
+    <update id="modifyByParentId" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail">
+        update INS_FILE_SERVER_DETAIL
+          SET  IS_DELETE = 0,MODIFY_TIME=sysdate
+        where  id in (
+            SELECT id FROM INS_FILE_SERVER_DETAIL
+            where is_delete=1
+            START WITH parent_id = #{id,jdbcType=VARCHAR}
+            CONNECT BY   parent_id =  PRIOR id
+        )
+    </update>
+
+    <update id="modifyDeleteByParentId" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail">
+        update INS_FILE_SERVER_DETAIL
+        SET  IS_DELETE = 1,MODIFY_TIME=sysdate
+        where  id in (
+        SELECT id FROM INS_FILE_SERVER_DETAIL
+        where is_delete=0
+        START WITH parent_id = #{id,jdbcType=VARCHAR}
+        CONNECT BY   parent_id =  PRIOR id
+        )
+    </update>
+
   <update id="update" parameterType="com.boco.henan.ftpwebsite.entity.FileServerDetail">
     update INS_FILE_SERVER_DETAIL
     <set>

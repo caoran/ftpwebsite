@@ -15,7 +15,6 @@ html,
 body {
     color: #505050;
     line-height: 1.75em;
-    background: #ebebeb;
     position: relative;
     font-family: "Helvetica Neue", Helvetica, Arial, "Hiragino Sans GB", "Hiragino Sans GB W3", "WenQuanYi Micro Hei", "Microsoft YaHei UI", "Microsoft YaHei", sans-serif;
 }
@@ -79,6 +78,10 @@ a img {
     background: #303030;
     color: #ffffff;
 }
+
+.grid-table .btn-group .btn {
+    margin: 5px 3px;
+}
 input[type="search"],
 input[type="text"],
 input[type="url"],
@@ -108,84 +111,146 @@ pre {
 }
 
 .header {
-	background-color: #76AD4B;
+	/*background-color: #76AD4B;*/
+   /* background: -webkit-linear-gradient(left, red , blue); !* Safari 5.1 - 6.0 *!
+    background: -o-linear-gradient(right, red, blue); !* Opera 11.1 - 12.0 *!
+    background: -moz-linear-gradient(right, #76AD4B, blue); !* Firefox 3.6 - 15 *!*/
+    background: linear-gradient(to right, #76AD4B , #1E9FFF); /* 标准的语法 */
     border: 1px solid orange;
-    height: 6%;
+    height: 40px;
     padding: 8px 8px;
+    position: relative;
+    z-index: 1000;
 }
 
 .header h3{
-     color: #FFFFFF;
+    color: #FFFFFF;
+    font-weight:600;
+    font-size: 1.5em;
 }
 
 .panel-header{
     background-color: #1E9FFF;
     padding: 2px 8px 2px 2px;
-    height: 100px;
+    height: 90px;
+    width: 1038px;
 }
 .panel-header-right {
-    width: 700px;
-    margin-left: 400px;
+    width: 600px;
+    margin-left: 420px;
 }
 .panel-header-left {
     width: 400px;
     float: left;
 }
 .panel-header .btn-group .btn {
-    padding: 7px 14px;
-    margin: 8px 2px;
+   background: transparent;
+    margin: 8px 0;
+    padding: 5px 7px;
+    font-size: 1.1em;
+    border: none;
+
 }
 .content {
-    height: 94%;
+    /*height: 100%;*/
+    background: #1E9FFF;
+    position: absolute;
+    top: 0;
+    bottom: 0;
+    width: 100%;
 }
 .content .title {
-    background-color: #76AD4B;
-    padding:10px 8px;
+    background: linear-gradient(to right, #76AD4B , #1E9FFF); /* 标准的语法 */
+    padding:3px 8px;
 }
 .content .title h4 {
     display: inline-block;
+    font-size: 1.2em;
 }
 .content .title button {
-    background-color: #FFFFFF;
     color: black;
-    padding: 2px 3px;
+    padding: 0px 3px;
     border-radius: 2px;
     border:1px solid black;
+    margin-top: -2px;
+    background: transparent;
+    border: none;
+}
+
+.content .title button.btn-create-folder{
+    background: #FFFFFF;
+    margin-top: 1px;
 }
 
 .panel-left {
-    border: 1px solid red;
-    height: 100%;
+    /*border: 1px solid red;*/
+    /*height: 100%;*/
     width: 300px;
-    overflow: scroll;
     float: left;
+    position: absolute;
+    bottom: 0;
+    top: 40px;
+}
+.folder-tree {
+    background: #ffffff;
+    margin: 5px 0 0 5px  !important;
+    overflow: scroll;
+    position: absolute;
+    bottom: 0;
+    top: 29px;
+    width: 100%;
 }
 .panel-right {
-    border: 1px solid blue;
-    width: auto;
-    height: 100%;
-    margin-left: 300px;
-    overflow-x: hidden;
+    /*border: 1px solid blue;*/
+    position: absolute;
+    top: 40px;
+    bottom: 0;
+    margin-left: 308px;
 }
 
 .search-form {
     border: 1px solid yellow;
     width:100%;
-    font-size: 14px;
-    padding:8px 12px;
+    font-size: 1.1em;
+    padding:8px 3px;
 }
 .search-form .form-group {
     position: relative;
     margin:8px 0 0 8px;
 }
-.search-form .form-group input {
+.search-form  .form-control {
     width: 100%;
+    background: #FFFFFF;
+    height: auto;
+    padding: 2px 3px;
+}
+
+.search-form  .busi-no{
+    width: 215px;
+    display: inline-block;
+}
+.search-form  .file-no{
+    width: 140px;
+    display: inline-block;
+}
+.search-form  .file-name{
+    width: 140px;
+    display: inline-block;
 }
 
 .search-form select {
     line-height: 14px;
     height: 30px;
+    width: 85px;
+    padding-left: 0px;
 }
+
+.search-form button {
+   padding: 2px 2px;
+    width: 50px;
+    margin-left: 18px;
+}
+
 .w40{
     width: 40px;
     display: inline-block;
@@ -206,6 +271,12 @@ pre {
     padding-left: 8px;
     display: inline-block;
 }
+
+.w95{
+    width: 95px;
+    display: inline-block;
+}
+
 .w100{
     width: 100px;
     display: inline-block;
@@ -229,6 +300,35 @@ pre {
     display: inline-block;
 }
 
+.w200{
+    width: 200px;
+    display: inline-block;
+}
+.ml-10{
+    margin-left: 10px !important;
+}
+
+.ztree-folder-icon{
+    line-height: 0;
+    margin: 0;
+    width: 16px;
+    height: 16px;
+    display: inline-block;
+    vertical-align: middle;
+    border: 0 none;
+    cursor: pointer;
+    outline: none;
+    background-color: transparent;
+    background-repeat: no-repeat;
+    background-attachment: scroll;
+    background-image:url("/css/zTreeStyle/img/zTreeStandard.gif");
+    margin-right: 2px;
+    background-position: -110px 0;
+    vertical-align: top;
+}
+
+
+
 .data_tab{ border:1px solid #ddd; border-collapse:collapse;}
 .data_tab th{height:40px;line-height:40px;font-size:14px; color:#333;border:1px solid #ddd; border-collapse:collapse;}
 .data_tab td{height:30px;line-height:30px;font-size:12px; color:#666;border:1px solid #ddd; border-collapse:collapse;}
@@ -237,10 +337,18 @@ pre {
 
 
 .grid-table {
-    height: 400px;
+    min-height: 420px;
+    margin: 0 25px 0 5px;
+    background: #fff;
+    overflow: scroll;
+    position: absolute;
+    /* border-bottom: 0; */
+    bottom: 0;
+    top: 90px;
+    width: 100%;
 }
 .grid-table table {
-    overflow: scroll;
+
 }
 .move-form {
     margin-top: -5px;
@@ -252,9 +360,18 @@ pre {
 
 .move-tree {
     height: 250px;
-    border: 1px solid red;
+    /*border: 1px solid red;*/
     padding: 5px 5px;
     /*width: 400px;*/
     overflow: scroll;
 }
+
+.icon-back {
+
+}
+
+.grid-recycle-table {
+    padding: 6px 2px;
+}
+
 

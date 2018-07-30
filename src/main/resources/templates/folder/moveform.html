@@ -132,6 +132,7 @@
             type : "get",
             dataType : "json",
             url: "/data/tree",
+            cache: false,
             data:{
                 isDelete:0
             },
@@ -219,10 +220,12 @@
                         console.log('result===========');
                         console.log(result);
                         if (result.success) {
-                            parent.$("#handle_status").val(JSON.stringify(result));
+                            //parent.$("#handle_status").val(JSON.stringify(result));
+                            parent.initTree(data.id.split(',')[0])
                             parent.layer.close(event.data.index);
+                            parent.layer.msg('移动文件成功', {icon: 1});
                         } else {
-                            layer.msg("移动失败", {icon: 2});
+                            layer.msg(result.message, {icon: 2});
                         }
                     },
                     error: function () {

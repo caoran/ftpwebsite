@@ -1,13 +1,17 @@
 package com.boco.henan.ftpwebsite.entity;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
+import org.hibernate.validator.constraints.NotEmpty;
 import org.springframework.format.annotation.DateTimeFormat;
 
+import javax.validation.constraints.Size;
 import java.util.Date;
 
 public class FileServerDetail {
     private String id;
 
+    @NotEmpty(message = "文件名称不能为空")
+    //@Size(min = 1, max = 50, message = "文件名称长度必须大于 1 且小于 50 字")
     private String fileName;
 
     private String oldFileName;
@@ -22,11 +26,11 @@ public class FileServerDetail {
 
     private String fileSize;
 
-    private Short isFolder;
+    private String isFolder;
 
     private String parentId;
 
-    private Short isDelete;
+    private String isDelete;
 
     private String filePath;
 
@@ -53,6 +57,10 @@ public class FileServerDetail {
     private String modifyStartTime;
     //修改结束时间
     private String modifyEndTime;
+
+    private String fileId;
+
+    private String relativePath;
 
     public String getId() {
         return id;
@@ -102,11 +110,11 @@ public class FileServerDetail {
         this.fileSize = fileSize == null ? null : fileSize.trim();
     }
 
-    public Short getIsFolder() {
+    public String getIsFolder() {
         return isFolder;
     }
 
-    public void setIsFolder(Short isFolder) {
+    public void setIsFolder(String isFolder) {
         this.isFolder = isFolder;
     }
 
@@ -118,11 +126,11 @@ public class FileServerDetail {
         this.parentId = parentId == null ? null : parentId.trim();
     }
 
-    public Short getIsDelete() {
-        return isDelete==null?0:isDelete;
+    public String getIsDelete() {
+        return isDelete;
     }
 
-    public void setIsDelete(Short isDelete) {
+    public void setIsDelete(String isDelete) {
         this.isDelete = isDelete;
     }
 
@@ -222,6 +230,22 @@ public class FileServerDetail {
         this.oldFileName = oldFileName;
     }
 
+    public String getFileId() {
+        return fileId;
+    }
+
+    public void setFileId(String fileId) {
+        this.fileId = fileId;
+    }
+
+    public String getRelativePath() {
+        return relativePath;
+    }
+
+    public void setRelativePath(String relativePath) {
+        this.relativePath = relativePath;
+    }
+
     @Override
     public String toString() {
         return "FileServerDetail{" +
@@ -246,6 +270,8 @@ public class FileServerDetail {
                 ", issueEndTime='" + issueEndTime + '\'' +
                 ", modifyStartTime='" + modifyStartTime + '\'' +
                 ", modifyEndTime='" + modifyEndTime + '\'' +
+                ", fileId='" + fileId + '\'' +
+                ", relativePath='" + relativePath + '\'' +
                 '}';
     }
 }

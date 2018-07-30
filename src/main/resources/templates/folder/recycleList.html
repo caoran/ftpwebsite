@@ -3,14 +3,29 @@
 <head>
     <title>移动位置选择</title>
     <link rel="stylesheet" th:href="@{/css/bootstrap.min.css}" media="screen" />
+    <link rel="stylesheet" th:href="@{/css/bootstrap-table.css}" media="screen"/>
     <link rel="stylesheet" th:href="@{/css/main_style.css}" media="screen" />
     <link rel="stylesheet" th:href="@{/css/font-awesome.min.css}" media="screen" />
 
 </head>
 <body>
-<div class="grid-table">
-    <table   id="data_table_file">
+<div class="grid-recycle-table">
+    <table   id="recycle_table_file"  data-toolbar="#toolbar">
     </table>
+    <div id="toolbar" style="width: 930px;">
+        <div class="btn-group">
+            <button type="button" class="btn btn-default ml-10" id="btn-reback">
+                <img th:src="@{/images/back.png}"/>恢复
+            </button>
+            <button  type="button" class="btn btn-default ml-10" id="btn-del">
+                <i class="glyphicon glyphicon-remove"></i>删除
+            </button>
+
+        </div>
+        <div class="pull-right">
+            <span ><i class="glyphicon glyphicon-info-sign"></i>回收站内保存7天内删除的文件</span>
+        </div>
+    </div>
 </div>
 
 </body>
@@ -18,6 +33,7 @@
 <script th:src="@{/js/jquery-1.11.0.min.js}"></script>
 <script type="text/javascript" th:src="@{/js/bootstrap.min.js}"></script>
 <script type="text/javascript" th:src="@{/js/bootstrap-table.js}"></script>
+<script type="text/javascript" th:src="@{/js/bootstrap-table-zh-CN.js}"></script>
 <script type="text/javascript" th:src="@{/js/jquery.serializejson.min.js}"></script>
 <script type="text/javascript" th:src="@{/js/layer/layer.js}"></script>
 <script>
@@ -25,8 +41,9 @@
 
     function initList(){
         console.log("开始加载列表数据");
-        $('#data_table_file').bootstrapTable({
-            url: "/data/list",
+        $('#recycle_table_file').bootstrapTable('destroy');
+        $('#recycle_table_file').bootstrapTable({
+            url: "/data/list/recycle",
             method:"get",
             dataType: "json",
             //contentType: "application/x-www-form-urlencoded",
@@ -53,8 +70,8 @@
             undefinedText:'--',
             uniqueId: "id", //每一行的唯一标识，一般为主键列
             queryParamsType:'',
-            queryParams: function () {
-                return {isDelete:0};
+            queryParams: function (params) {
+                return {pageSize:params.pageSize,pageNumber:params.pageNumber,isDelete:1};
             },
             columns: [{
                 checkbox: true,
@@ -92,18 +109,107 @@
             },
             onDblClickRow: function (row, $element) {
                 var id = row.ID;
-                EditViewById(id, 'view');
+                //EditViewById(id, 'view');
             },
         });
     }
 
+    var rebackFolder=function () {
+        var $table = $("#recycle_table_file");
+        var ids = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id;
+        });
+        if(ids != null && ids != ''){
+            layer.confirm("确定要恢复选中的文件吗？", {
+                btn: ['确定', '取消'], //按钮
+                icon:3
+            }, function (index) {
+                $.ajax({
+                    type : "PUT",
+                    dataType : "json",
+                    url : "/data/list/recycle",
+                    data:{
+                      id:ids.join(',')
+                    },
+                    success : function(result) {
+                        if(result.success){
+                            layer.close(index);
+                            layer.msg(result.message, {icon: 1});
+                            initList();
+                        }else {
+                            layer.msg(result.message,{icon:2});
+                        }
+                    },
+                    error : function(XMLHttpRequest, textStatus, errorThrown) {
+                        console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                            + "-textStatus:" + textStatus);
+                    }
+                });
+            }, function (index) {
+                layer.close(index);
+            });
+        }else{
+            layer.msg("请选中要进行恢复的文件",{ icon: 7,time: 2000 //2秒关闭（如果不配置，默认是3秒）
+            });
+        }
+    }
+
+
+    var delFolder=function () {
+        var $table = $("#recycle_table_file");
+        var ids = $.map($table.bootstrapTable('getSelections'), function (row) {
+            return row.id;
+        });
+        if(ids != null && ids != ''&&ids.length>0){
+            layer.confirm("确定要删除选中的文件吗？", {
+                btn: ['确定', '取消'], //按钮
+                icon:3
+            }, function (index) {
+                //var ids=getAllChild(zTree.getSelectedNodes()[0]).join(',');
+                console.log('获取目录下所有的节点id');
+                console.log(ids);
+                $.ajax({
+                    type : "post",
+                    dataType : "json",
+                    url : "/data/list/recycle",
+                    data: {
+                        id:ids.join(','), _method: 'DELETE'
+                    },
+                    success : function(result) {
+                        if(result.success) {
+                            layer.close(index);
+                            layer.msg(result.message, {icon: 1});
+                            initList();
+                        }else {
+                            layer.msg(result.message, {icon: 2});
+                        }
+                    },
+                    error : function(XMLHttpRequest, textStatus, errorThrown) {
+                        console.log("js调用错误信息：" + XMLHttpRequest.readyState
+                            + "-textStatus:" + textStatus);
+                    }
+                });
+            }, function (index) {
+                layer.close(index);
+            });
+        }else{
+            layer.msg("请选中要进行删除的文件",{ icon: 7,time: 2000 //2秒关闭（如果不配置，默认是3秒）
+            });
+        }
+    }
 
     $(document).ready(function(){
         var index = parent.layer.getFrameIndex(window.name);
 
+        initList();
+
         $("#btn_cancle").on('click',function () {
             parent.layer.close(index);
         })
+        
+        $('#btn-reback').on('click',rebackFolder);
+
+        $('#btn-del').on('click',delFolder);
     });
     //]]>
 </script>

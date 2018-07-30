@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.w3.org/1999/xhtml">
+<head  class="no-js" lang="zh-CN" xmlns:th="http://www.thymeleaf.org">
+	<meta charset="UTF-8" />
+	<title>Insert title here</title>
+	<link rel="stylesheet" th:href="@{/css/amazeui.min.css}"  />
+	<link rel="stylesheet" th:href="@{/webuploader/webuploader.css}" />
+	<link rel="stylesheet" th:href="@{/webuploader/style.css}"  />
+	<style type="text/css">
+	  .pick{
+	     overflow: hidden;
+	     position: relative;
+	    display: inline-block;
+	    cursor: pointer;
+	    background: #00b7ee;
+	    padding: 10px 15px;
+	    color: #fff;
+	    text-align: center;
+	    border-radius: 3px;
+	  }
+	</style>
+</head>
+<body>
+<div class="admin-main"  style=" height:400px;overflow:auto;">
+	<form  id="upload-form" action=""  method="post" class="am-form am-form-horizontal" style="margin-left:10px;margin-right:10px;">
+		<!-- 隐藏域 -->
+		<input type="text"  id="parentId" name="parentId" style="display: none;"  th:value="${parentId}" placeholder="文件名"/>
+		<!-- 第一行开始 -->
+		<div class="am-g " style="margin-top:15px;">
+			<label   for="doc-ipt-1" class="am-u-sm-3">文件选择:</label >
+			<div id="doc-ipt-1" class="am-u-sm-6">
+				<input type="text"  id="ensList" placeholder="文件路径"/>
+			</div>
+			<div class="btns">
+			<div id="picker_ens"  class="am-u-sm-3    ">选择</div>
+			</div>
+		</div>
+		<!-- 第一行结束-->
+		<!-- 第一行开始 -->
+		<div class="am-g " style="margin-top:15px;">
+			<label   for="doc-ipt-2" class="am-u-sm-3">文件名:</label >
+			<div id="doc-ipt-2" class="am-u-sm-9">
+				<input type="text"  id="filename" readonly="readonly" name="fileName" laceholder="文件名"/>
+			</div>
+		</div>
+		<!-- 第一行结束-->
+
+		<!-- 第一行开始 -->
+		<div class="am-g " style="margin-top:15px;">
+			<label   for="doc-ipt-3" class="am-u-sm-3">局数据号:</label >
+			<div id="doc-ipt-3" class="am-u-sm-9">
+				<input type="text"  name="busiNo"  id="jushujuno" placeholder=""/>
+			</div>
+		</div>
+		<!-- 第一行结束-->
+		<!-- 第一行开始 -->
+		<div class="am-g " style="margin-top:15px;">
+			<label   for="doc-ipt-4" class="am-u-sm-3">文号:</label >
+			<div id="doc-ipt-4" class="am-u-sm-9">
+				<input type="text" name="fileNo"  id="num" placeholder=""/>
+			</div>
+		</div>
+		<!-- 第一行结束-->
+		<!-- 最后一行开始 -->
+		<div class="am-g " style="margin-top:15px;">
+			<label   for="doc-ipt-5" class="am-u-sm-3">下发时间:</label >
+			<div id="doc-ipt-5" class="am-u-sm-9">
+				<input type="text"  name="issueTime"   th:value="${#dates.format(new java.util.Date().getTime(), 'yyyy-MM-dd')}" placeholder="点击选择时间" id="dateselect" onclick="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
+			</div>
+		</div>
+		<!-- 第一行结束-->
+		<button type="submit" id="ctlBtn" class="am-btn am-btn-secondary"  style="margin-left:240px;margin-top:10px;">开始上传</button>
+	</form>
+</div>
+<div th:replace="common/_js"></div>
+<script type="text/javascript">
+    var index = parent.layer.getFrameIndex(window.name);
+    initUploaderENS();
+    //开始上传
+    $("#ctlBtn").click(function(file,f,e) {
+        console.log('开始上传。。。。');
+        var name=$("#ensList").val();
+        if(name==""||name==undefined){
+        	layer.msg("上传文件不能为空，请选择文件！", {icon: 2});
+        	 return false;
+        }
+      //  if(uploaderENS._events.length==0){
+      //  	layer.msg("该文件已经上传，请不要重复上传！", {icon: 2});
+     //   }
+       /*   $.ajax({
+					url:'/fileUpload/upload?parentId='+parentId,
+					type:"POST",
+					success:function(data){
+						uploaderENS.upload();
+					}
+			    	}) */ 
+      
+      
+      
+       uploaderENS.upload();
+       
+       return false;
+    })
+    //初始化ens
+    function initUploaderENS() {
+        var parentId=$("#parentId").val();
+        uploaderENS = WebUploader.create({
+            swf : "/assets/webuploader/Uploader.swf",
+            pick : {
+                id : '#picker_ens',
+                multiple: false
+            },
+            //fileNumLimit: 1,
+            duplicate : true ,
+            //		server : '/fileUpload/upload'
+            server : '/fileUpload/upload?parentId='+parentId
+        });
+        
+        //开始上传
+        /* uploaderENS.on("uploadStart", function (file) {
+        	console.log( uploaderENS.getFiles() ); 
+        	var files=uploaderENS.getFiles() ;
+        	   var num=parseInt(files.length) ;
+        	   var i=0;
+        	  var file= uploaderENS.removeFile( files[0],true );
+        	   var s=uploaderENS.queueNum;
+        }); */
+        uploaderENS.on("startUpload", function (file) {
+        	//var files=uploaderENS.getFiles() ;
+        	/* 在此用for循环写  总报元素格式不正确  故用下面方法*/
+        	/*if(files.length>1){
+        		  var file= uploaderENS.removeFile( files[0],true );
+        	}
+        	if(files.length>2){
+      		  var file= uploaderENS.removeFile( files[0],true );
+      		  var file= uploaderENS.removeFile( files[1],true );
+         	}
+        	if(files.length>3){
+        		  var file= uploaderENS.removeFile( files[0],true );
+        		  var file= uploaderENS.removeFile( files[1],true );
+        		  var file= uploaderENS.removeFile( files[2],true );
+           	}
+        	if(files.length>4){
+      		  var file= uploaderENS.removeFile( files[0],true );
+      		  var file= uploaderENS.removeFile( files[1],true );
+      		  var file= uploaderENS.removeFile( files[2],true );
+      		 var file= uploaderENS.removeFile( files[3],true );
+         	}*/
+        	var prefiles=uploaderENS.getFiles().slice(0,uploaderENS.getFiles().length-1);
+        	console.log('uploaderENS.getFiles()',uploaderENS.getFiles());
+        	console.log('prefiles',prefiles);
+            $.each(prefiles,function (index,tempfile) {
+                uploaderENS.removeFile(tempfile);
+            });
+        });
+        uploaderENS.on('uploadError', function(file,reason) {
+            console.log('file',file);
+            console.log('reason',reason);
+            layer.msg("文件上传失败",{icon:2});
+        });
+     // 所有文件上传成功后调用        
+        uploaderENS.on('uploadFinished', function () {
+            //清空队列
+  //          initUploaderENS();
+        });
+        uploaderENS.on('uploadSuccess', function(file, response) {
+        	
+            console.log('file',file);
+            console.log('response',response);
+            if(response==undefined){
+            	return ;
+            }
+            if(response.status==='1') {
+                var data = $('#upload-form').serializeJSON();
+                data.fileSize = response.size;
+                $.ajax({
+                    url: "/data/list",
+                    type: "POST",
+                    data: data,
+                    success: function (result) {
+                        if (result.success) {
+                            //parent.$("#handle_status").val(JSON.stringify(result));
+                            //layer.msg("上传成功！",{icon:6});
+                            console.log('parentId',parentId);
+                            parent.layer.close(index);
+                            parent.layer.msg("上传成功！",{icon:6});
+                            parent.initTree(parentId);
+                            //parent.layer.close(index);
+                           /* setTimeout(function(){
+                            	 parent.layer.close(index);
+                            	},1500
+                            	);*/
+                        } else {
+                            layer.msg(result.message, {icon: 2});
+                        }
+                    }
+                })
+                return false;
+            }else{
+            	  //layer.msg("上传目录下包含同名文件，上传失败！",{icon:2});
+                  layer.msg(response.message,{icon:2});
+           
+            /* setTimeout(function(){
+                	 parent.layer.close(index);
+                	},2000
+                	); */
+            }
+        });
+
+        // 当有文件被添加进队列的时候
+        uploaderENS.on('fileQueued', function(file) {
+            console.log('file',file);
+            $("#ensList").val(file.name);
+            $("#filename").val(file.name);
+        });
+    }
+</script>
+</body>
+</html>

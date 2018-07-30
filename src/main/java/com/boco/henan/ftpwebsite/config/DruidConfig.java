@@ -90,7 +90,7 @@ public class DruidConfig {
     }
 
     @Primary
-    @Bean(destroyMethod = "close")
+    @Bean(destroyMethod = "close",initMethod="init")
     //destroy-method="close"的作用是当数据库连接不使用的时候,就把该连接重新放到数据池中,方便下次使用调用.
     public DataSource druidDataSource() {
         DruidDataSource datasource = new DruidDataSource();

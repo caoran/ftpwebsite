@@ -5,6 +5,19 @@ public class RestResponse<T> {
     private String message;
     private T data;
 
+    public RestResponse() {
+    }
+
+    public RestResponse(boolean success, String message) {
+        this.success = success;
+        this.message = message;
+    }
+
+    public RestResponse(boolean success, String message, T data) {
+        this(success,message);
+        this.data=data;
+    }
+
     public boolean isSuccess() {
         return success;
     }

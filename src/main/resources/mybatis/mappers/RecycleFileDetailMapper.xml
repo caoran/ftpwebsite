@@ -1,0 +1,98 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.boco.henan.ftpwebsite.dao.RecycleFileDetailMapper">
+  <resultMap id="BaseResultMap" type="com.boco.henan.ftpwebsite.entity.RecycleFileDetail">
+    <id column="ID" jdbcType="VARCHAR" property="id" />
+    <result column="RELATIVE_PATH" jdbcType="VARCHAR" property="relativePath" />
+    <result column="FILE_ID" jdbcType="VARCHAR" property="fileId" />
+    <result column="DELETEDATE" jdbcType="TIMESTAMP" property="deletedate" />
+  </resultMap>
+  <sql id="Base_Column_List">
+    ID, RELATIVE_PATH, FILE_ID, DELETEDATE
+  </sql>
+  <select id="getById" parameterType="java.lang.String" resultMap="BaseResultMap">
+    select
+    <include refid="Base_Column_List" />
+    from INS_RECYCLE_FILE_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </select>
+
+  <select id="getList" resultType="com.boco.henan.ftpwebsite.entity.RecycleFileDetail">
+    select
+    <include refid="Base_Column_List" />
+    from INS_RECYCLE_FILE_DETAIL
+    <where>
+      <if test="id != null">
+        ID = #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="relativePath != null">
+        RELATIVE_PATH= #{relativePath,jdbcType=VARCHAR},
+      </if>
+      <if test="fileId != null">
+        FILE_ID= #{fileId,jdbcType=VARCHAR},
+      </if>
+      <if test="deletedate != null">
+        DELETEDATE= #{deletedate,jdbcType=TIMESTAMP},
+      </if>
+    </where>
+  </select>
+  <select id="getDeleteList" resultType="com.boco.henan.ftpwebsite.entity.RecycleFileDetail">
+    select
+    <include refid="Base_Column_List" />
+    from INS_RECYCLE_FILE_DETAIL
+    WHERE
+    <![CDATA[ DELETEDATE< sysdate-#{day,jdbcType=DECIMAL} ]]>
+  </select>
+
+  <delete id="delete" parameterType="java.lang.String">
+    delete from INS_RECYCLE_FILE_DETAIL
+    where ID = #{id,jdbcType=VARCHAR}
+  </delete>
+
+  <insert id="save" parameterType="com.boco.henan.ftpwebsite.entity.RecycleFileDetail">
+    insert into INS_RECYCLE_FILE_DETAIL
+    <trim prefix="(" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        ID,
+      </if>
+      <if test="relativePath != null">
+        RELATIVE_PATH,
+      </if>
+      <if test="fileId != null">
+        FILE_ID,
+      </if>
+      <if test="deletedate != null">
+        DELETEDATE,
+      </if>
+    </trim>
+    <trim prefix="values (" suffix=")" suffixOverrides=",">
+      <if test="id != null">
+        #{id,jdbcType=VARCHAR},
+      </if>
+      <if test="relativePath != null">
+        #{relativePath,jdbcType=VARCHAR},
+      </if>
+      <if test="fileId != null">
+        #{fileId,jdbcType=VARCHAR},
+      </if>
+      <if test="deletedate != null">
+        #{deletedate,jdbcType=TIMESTAMP},
+      </if>
+    </trim>
+  </insert>
+  <update id="update" parameterType="com.boco.henan.ftpwebsite.entity.RecycleFileDetail">
+    update INS_RECYCLE_FILE_DETAIL
+    <set>
+      <if test="relativePath != null">
+        RELATIVE_PATH = #{relativePath,jdbcType=VARCHAR},
+      </if>
+      <if test="fileId != null">
+        FILE_ID = #{fileId,jdbcType=VARCHAR},
+      </if>
+      <if test="deletedate != null">
+        DELETEDATE = #{deletedate,jdbcType=TIMESTAMP},
+      </if>
+    </set>
+    where ID = #{id,jdbcType=VARCHAR}
+  </update>
+</mapper>

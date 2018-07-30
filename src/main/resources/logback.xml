@@ -7,9 +7,9 @@
     <appender name="stdout" class="ch.qos.logback.core.ConsoleAppender">
         <!-- encoders are assigned the type
              ch.qos.logback.classic.encoder.PatternLayoutEncoder by default -->
-        <layout class="ch.qos.logback.classic.PatternLayout">
+        <encoder>
             <pattern>%date [%thread] [%contextName] [%X{traceId}] %-5level %logger{80}.%L - %msg%n</pattern>
-        </layout>
+        </encoder>
     </appender>
 
     <appender name="logfile" class="ch.qos.logback.core.rolling.RollingFileAppender">
@@ -26,16 +26,22 @@
     </appender>
 
     <logger name="com.boco" >
-        <level value="DEBUG" />
+        <level value="INFO" />
     </logger>
+
 
     <logger name="org.springframework">
         <level value="ERROR" />
     </logger>
 
+    <logger name="springfox">
+        <level value="ERROR" />
+    </logger>
+<!--
     <logger name="org.mybatis.spring">
         <level value="ERROR" />
     </logger>
+-->
 
     <logger name="org.apache.zookeeper">
         <level value="ERROR" />

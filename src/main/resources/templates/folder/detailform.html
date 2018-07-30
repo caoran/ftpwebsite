@@ -15,7 +15,7 @@
             <input type="text" class="form-control" name="fileName"  id="fileName"   th:value="${data.fileName}"/>
         </div>
     </div>
-    <div th:if="${data.isFolder != 1} ">
+    <div th:if="${data.isFolder != '1'} ">
         <div class="form-group" >
             <label for="busiNo" class="col-xs-2 control-label">局数据号:</label>
             <div  class="col-xs-10">
@@ -31,21 +31,21 @@
         <div class="form-group" >
             <label for="issueTime" class="col-xs-2 control-label">下发时间:</label>
             <div class="col-xs-10">
-                <input type="text" class="form-control" name="issueTime"  id="issueTime"   th:value="${data.issueTime}" onFocus="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
+                <input type="text" class="form-control" name="issueTime"  id="issueTime"  th:value="${#dates.format(data.issueTime, 'yyyy-MM-dd')}" onFocus="WdatePicker({skin:'blue',dateFmt:'yyyy-MM-dd',isShowClear:false,isShowClear:true})"/>
             </div>
         </div>
     </div>
     <div class="form-group">
-        <div class="col-xs-offset-4 col-xs-10">
+        <div style="text-align: center">
             <button  type="button" class="btn btn-default " id="save_data">保存</button>
             <button  type="button" class="col-xs-offset-2 btn btn-default " id="btn_cancle">取消</button>
         </div>
     </div>
 
     <div>
+        <input type="hidden" th:if="${data.parentId != null}" th:value="${data.parentId}" name="parentId" id="data_parentId"/>
         <input type="hidden" th:if="${data.id != null}" th:value="${data.id}" name="id" id="data_id"/>
         <input type="hidden" th:if="${data.fileName != null}" th:value="${data.fileName}" name="oldFileName" id="old_file_name"/>
-        <input  type="hidden"  name="filePath" id="file_path" value=""/>
     </div>
 </form>
 
@@ -71,8 +71,8 @@
             //var submitData=decodeURIComponent(data,true);
             //submitData是解码后的表单数据，结果同上
             $.ajax({
-                url:'/data/'+data.id+'/list',
-                type : "post",
+                url:'/data/tree',
+                type : "put",
                 dataType : "json",
                 cache:false,//false是不缓存，true为缓存
                 async:true,//true为异步，false为同步
@@ -82,10 +82,12 @@
                     console.log(result);
                     //layer.msg("修改成功",{icon:1});
                     if(result.success){
-                        parent.$("#handle_status").val(JSON.stringify(result));
                         parent.layer.close(index);
-                   }else {
-                       layer.msg("修改失败",{icon:2});
+                        parent.layer.msg('修改成功', {icon: 1});
+                        //parent.$("#handle_status").val(JSON.stringify(result));
+                        parent.initTree(data.id);
+                    }else {
+                       layer.msg(result.message,{icon:2});
                    }
                 },
                 error:function(){
